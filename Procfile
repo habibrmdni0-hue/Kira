@@ -1,1 +1,1 @@
-web: python -m api.server
+web: python api/server_minimal.py
