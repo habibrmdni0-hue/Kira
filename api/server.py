@@ -181,3 +181,10 @@ def health() -> Dict[str, Any]:
         "mode":      "mock" if settings.mock_mode else "live",
         "firestore": firestore_status(),
     }
+
+
+if __name__ == "__main__":
+    import os
+    import uvicorn
+    port = int(os.environ.get("PORT", 8000))
+    uvicorn.run(app, host="0.0.0.0", port=port)
