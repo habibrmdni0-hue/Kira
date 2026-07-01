@@ -4,25 +4,28 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Kira — AI Business Dashboard</title>
-  <!-- Chart.js 4.4 — load synchronously so it's ready before inline script -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
   <style>
-    /* ── Design tokens ───────────────────────────────────────── */
+    /* ── Design tokens ─────────────────────────────────── */
     :root {
-      --bg:      #F1F5F9;
-      --card:    #FFFFFF;
-      --border:  #E2E8F0;
-      --sh:      0 1px 3px rgba(0,0,0,.06), 0 2px 10px rgba(0,0,0,.04);
-      --r:       16px;
-      --accent:  #2563EB;
-      --al:      #EFF6FF;
-      --green:   #10B981;
-      --amber:   #F59E0B;
-      --red:     #EF4444;
-      --t1:      #111827;
-      --t2:      #6B7280;
-      --t3:      #9CA3AF;
-      --gap:     14px;
+      --sb-w:     240px;
+      --sb-bg:    #1B2E4B;
+      --sb-text:  rgba(255,255,255,.65);
+      --sb-muted: rgba(255,255,255,.25);
+      --sb-hover: rgba(255,255,255,.08);
+      --sb-act:   rgba(37,99,235,.75);
+      --bg:       #F0F4F8;
+      --card:     #FFFFFF;
+      --border:   #E2E8F0;
+      --sh:       0 1px 3px rgba(0,0,0,.06), 0 2px 10px rgba(0,0,0,.04);
+      --r:        14px;
+      --accent:   #2563EB;
+      --green:    #10B981;
+      --amber:    #F59E0B;
+      --red:      #EF4444;
+      --t1:       #111827;
+      --t2:       #6B7280;
+      --t3:       #9CA3AF;
     }
 
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -31,224 +34,315 @@
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       background: var(--bg);
       color: var(--t1);
-      min-height: 100vh;
       display: flex;
-      flex-direction: column;
+      min-height: 100vh;
     }
 
-    /* ── Topbar ──────────────────────────────────────────────── */
-    .topbar {
-      position: sticky; top: 0; z-index: 100;
-      background: #1B2E4B; color: #fff;
-      height: 52px; padding: 0 20px;
-      display: flex; align-items: center; gap: 12px;
-      border-bottom: 1px solid rgba(255,255,255,.08);
+    /* ─────────────────── SIDEBAR ──────────────────────── */
+    .sidebar {
+      width: var(--sb-w);
+      background: var(--sb-bg);
+      position: fixed; left: 0; top: 0; bottom: 0;
+      display: flex; flex-direction: column;
+      z-index: 100;
+      overflow-y: auto;
+      overflow-x: hidden;
+    }
+
+    /* Logo */
+    .sb-logo {
+      padding: 22px 20px 16px;
+      border-bottom: 1px solid rgba(255,255,255,.07);
       flex-shrink: 0;
     }
-    .logo { font-size: 19px; font-weight: 800; letter-spacing: -.5px; white-space: nowrap; }
-    .logo em { color: #60A5FA; font-style: normal; }
-    .biz-pill {
-      display: flex; align-items: center; gap: 6px;
-      background: rgba(255,255,255,.1); border-radius: 20px; padding: 4px 12px;
+    .sb-logo-text {
+      font-size: 21px; font-weight: 800; color: #fff; letter-spacing: -.6px;
     }
-    .biz-dot {
+    .sb-logo-text em { color: #60A5FA; font-style: normal; }
+    .sb-logo-sub {
+      font-size: 10px; color: var(--sb-muted); margin-top: 2px;
+      text-transform: uppercase; letter-spacing: .9px;
+    }
+
+    /* Business pill */
+    .sb-biz {
+      padding: 11px 16px;
+      display: flex; align-items: center; gap: 9px;
+      background: rgba(255,255,255,.05);
+      border-bottom: 1px solid rgba(255,255,255,.05);
+      flex-shrink: 0;
+    }
+    .sb-biz-dot {
       width: 7px; height: 7px; border-radius: 50%;
       background: #22C55E; box-shadow: 0 0 6px #22C55E; flex-shrink: 0;
     }
-    .biz-name { font-size: 13px; font-weight: 500; white-space: nowrap; }
-    .spacer { flex: 1; }
+    .sb-biz-name {
+      font-size: 12px; font-weight: 600; color: #fff;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+
+    /* Nav */
+    .sb-nav { padding: 10px 0; flex: 1; }
+    .sb-section-label {
+      font-size: 9px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .9px; color: var(--sb-muted);
+      padding: 10px 20px 4px;
+    }
+    .sb-nav-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 14px; margin: 2px 8px; border-radius: 9px;
+      cursor: pointer; transition: all .15s;
+      color: var(--sb-text); user-select: none;
+    }
+    .sb-nav-item:hover { background: var(--sb-hover); color: #fff; }
+    .sb-nav-item.active {
+      background: var(--sb-act); color: #fff;
+      box-shadow: 0 2px 10px rgba(37,99,235,.35);
+    }
+    .sb-nav-icon  { font-size: 16px; width: 22px; text-align: center; flex-shrink: 0; }
+    .sb-nav-label { font-size: 13px; font-weight: 500; }
+
+    /* Business selector */
+    .sb-users {
+      padding: 6px 8px;
+      border-top: 1px solid rgba(255,255,255,.06);
+      flex-shrink: 0;
+    }
+    .sb-users-label {
+      font-size: 9px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .9px; color: var(--sb-muted); padding: 6px 12px;
+    }
+    .sb-user-item {
+      display: flex; align-items: center; gap: 8px;
+      padding: 7px 12px; border-radius: 7px; cursor: pointer;
+      transition: all .15s; color: var(--sb-text);
+      font-size: 12px; font-weight: 500; user-select: none;
+    }
+    .sb-user-item:hover { background: var(--sb-hover); color: #fff; }
+    .sb-user-item.active { background: rgba(255,255,255,.11); color: #fff; }
+    .sb-user-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: rgba(255,255,255,.25); flex-shrink: 0; transition: all .15s;
+    }
+    .sb-user-item.active .sb-user-dot { background: #22C55E; box-shadow: 0 0 5px #22C55E; }
+
+    /* Sidebar bottom */
+    .sb-bottom {
+      padding: 10px 12px 14px;
+      border-top: 1px solid rgba(255,255,255,.06);
+      flex-shrink: 0;
+      display: flex; flex-direction: column; gap: 9px;
+    }
+    .sb-lang-row {
+      display: flex; align-items: center;
+    }
+    .sb-lang-label { font-size: 10px; color: var(--sb-muted); flex: 1; }
+    .lang-switch { display: flex; background: rgba(255,255,255,.1); border-radius: 7px; overflow: hidden; }
+    .lang-btn {
+      padding: 4px 11px; font-size: 11px; font-weight: 600;
+      cursor: pointer; color: rgba(255,255,255,.45);
+      border: none; background: transparent; transition: all .15s; font-family: inherit;
+    }
+    .lang-btn.active { background: rgba(255,255,255,.2); color: #fff; }
     .amd-btn {
-      background: #00A86B; color: #fff; border: none; cursor: pointer;
-      padding: 5px 11px; border-radius: 6px;
-      font-size: 11px; font-weight: 700; letter-spacing: .4px;
-      transition: opacity .15s; white-space: nowrap;
+      background: #00916A; color: #fff; border: none; cursor: pointer;
+      padding: 8px 12px; border-radius: 8px;
+      font-size: 11px; font-weight: 700; letter-spacing: .3px;
+      width: 100%; text-align: left; font-family: inherit;
+      transition: opacity .15s;
     }
     .amd-btn:hover { opacity: .85; }
-    .lang-switch { display: flex; background: rgba(255,255,255,.12); border-radius: 6px; overflow: hidden; }
-    .lang-btn {
-      padding: 5px 12px; font-size: 12px; font-weight: 600;
-      cursor: pointer; color: rgba(255,255,255,.55);
-      border: none; background: transparent; transition: all .15s;
-    }
-    .lang-btn.active { background: rgba(255,255,255,.22); color: #fff; }
+    .sb-mode { font-size: 10px; color: var(--sb-muted); line-height: 1.5; }
 
-    /* ── Dashboard ───────────────────────────────────────────── */
-    .dashboard {
+    /* ─────────────────── MAIN ─────────────────────────── */
+    .main {
+      margin-left: var(--sb-w);
       flex: 1;
-      padding: 16px 20px 24px;
       display: flex; flex-direction: column;
-      gap: var(--gap);
+      min-height: 100vh;
     }
 
-    /* ── Card base ───────────────────────────────────────────── */
+    /* Sticky view header */
+    .view-header {
+      position: sticky; top: 0; z-index: 50;
+      background: rgba(240,244,248,.9);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--border);
+      padding: 13px 24px;
+      display: flex; align-items: center; justify-content: space-between;
+      flex-shrink: 0;
+    }
+    .vh-title { font-size: 17px; font-weight: 700; color: var(--t1); }
+    .vh-sub   { font-size: 11px; color: var(--t3); margin-top: 1px; }
+    .vh-actions { display: flex; gap: 8px; align-items: center; }
+
+    /* View content */
+    .view-content {
+      flex: 1; padding: 18px 22px 28px;
+      overflow-y: auto;
+    }
+    .view-content.no-scroll { overflow: hidden; padding-bottom: 0; }
+
+    /* View panels — show/hide */
+    .view { display: none; }
+    .view.active { display: block; }
+    #view-chat.active { display: flex; flex-direction: column; height: calc(100vh - 64px); }
+
+    /* ─────────────────── CARDS ────────────────────────── */
     .card {
-      background: var(--card);
-      border-radius: var(--r);
-      border: 1px solid var(--border);
-      box-shadow: var(--sh);
+      background: var(--card); border-radius: var(--r);
+      border: 1px solid var(--border); box-shadow: var(--sh);
     }
     .card-hd {
       display: flex; align-items: center; justify-content: space-between;
-      padding: 14px 18px 10px;
+      padding: 13px 17px 9px;
     }
     .card-title {
-      font-size: 11px; font-weight: 700; text-transform: uppercase;
-      letter-spacing: .65px; color: var(--t2);
+      font-size: 10px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .7px; color: var(--t2);
     }
     .badge {
       font-size: 10px; color: var(--t3);
-      background: var(--bg); border-radius: 20px;
-      padding: 2px 8px; flex-shrink: 0;
+      background: var(--bg); border-radius: 20px; padding: 2px 8px;
     }
 
-    /* ── ROW 1: Metric cards ─────────────────────────────────── */
-    .metrics-row {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: var(--gap);
+    /* ─────────────────── VIEW 1: Overview ─────────────── */
+    .ov-metrics {
+      display: grid; grid-template-columns: repeat(4,1fr);
+      gap: 12px; margin-bottom: 14px;
     }
     .metric-card {
-      padding: 18px 20px 16px;
-      border-left: 4px solid transparent;
-      border-radius: var(--r);
+      padding: 16px 18px 14px;
+      border-left: 4px solid var(--border);
       transition: border-color .2s;
     }
     .metric-card.ok     { border-left-color: var(--green); }
     .metric-card.warn   { border-left-color: var(--amber); }
     .metric-card.danger { border-left-color: var(--red); }
     .metric-label {
-      font-size: 11px; font-weight: 700; text-transform: uppercase;
-      letter-spacing: .65px; color: var(--t2); margin-bottom: 8px;
+      font-size: 10px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .7px; color: var(--t2); margin-bottom: 7px;
     }
-    .metric-value {
-      font-size: 24px; font-weight: 800; letter-spacing: -.5px;
-      line-height: 1; color: var(--t1); transition: color .2s;
-    }
+    .metric-value { font-size: 21px; font-weight: 800; letter-spacing: -.4px; line-height: 1; }
     .metric-value.ok     { color: #059669; }
     .metric-value.warn   { color: #D97706; }
     .metric-value.danger { color: #DC2626; }
     .metric-sub { font-size: 11px; color: var(--t3); margin-top: 5px; }
 
-    /* ── ROW 2: Sales + Runway ───────────────────────────────── */
-    .row-top-charts {
-      display: grid;
-      grid-template-columns: 2fr 1fr;
-      gap: var(--gap);
+    .ov-row2 {
+      display: grid; grid-template-columns: 2fr 1fr;
+      gap: 12px; margin-bottom: 14px;
     }
-
-    /* Sales chart */
-    .chart-pad { padding: 0 16px 14px; }
-    .chart-h200 { position: relative; height: 200px; }
+    .chart-pad { padding: 0 14px 12px; }
+    .h160 { position: relative; height: 160px; }
+    .h200 { position: relative; height: 200px; }
+    .h220 { position: relative; height: 220px; }
 
     /* Runway donut */
     .runway-body {
       display: flex; flex-direction: column;
-      align-items: center; padding: 4px 16px 18px; gap: 10px;
+      align-items: center; padding: 6px 14px 16px; gap: 10px;
     }
-    .runway-wrap {
-      position: relative;
-      width: 155px; height: 155px;
-    }
-    .runway-wrap canvas { display: block; }
+    .runway-wrap { position: relative; width: 136px; height: 136px; }
     .runway-center {
       position: absolute; top: 50%; left: 50%;
       transform: translate(-50%, -50%);
       text-align: center; pointer-events: none;
     }
-    .runway-num  { font-size: 30px; font-weight: 800; letter-spacing: -.5px; line-height: 1; }
-    .runway-unit { font-size: 12px; color: var(--t2); margin-top: 3px; }
+    .runway-num  { font-size: 28px; font-weight: 800; letter-spacing: -.5px; line-height: 1; }
+    .runway-unit { font-size: 11px; color: var(--t2); margin-top: 3px; }
     .runway-status {
-      font-size: 12px; font-weight: 600; text-align: center;
-      padding: 4px 12px; border-radius: 20px;
+      font-size: 11px; font-weight: 600; text-align: center;
+      padding: 3px 12px; border-radius: 20px;
     }
     .runway-status.ok     { background: #D1FAE5; color: #065F46; }
     .runway-status.warn   { background: #FEF3C7; color: #92400E; }
     .runway-status.danger { background: #FEE2E2; color: #991B1B; }
 
-    /* ── ROW 3: Stock + Margin ───────────────────────────────── */
-    .row-mid-charts {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: var(--gap);
+    /* Overview compact forecast */
+    .ov-fc {
+      display: flex; gap: 14px; align-items: flex-start;
+      padding: 14px 17px;
     }
-    .chart-h175 { position: relative; height: 175px; }
+    .ov-fc-kpi { min-width: 95px; }
+    .ov-fc-label {
+      font-size: 10px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .6px; color: var(--t2); margin-bottom: 4px;
+    }
+    .ov-fc-value { font-size: 22px; font-weight: 800; letter-spacing: -.4px; line-height: 1; }
+    .ov-fc-unit  { font-size: 11px; color: var(--t3); margin-top: 3px; }
+    .ov-fc-sep   { width: 1px; background: var(--border); align-self: stretch; flex-shrink: 0; }
+    .ov-fc-summary { flex: 1; min-width: 160px; }
+    .ov-fc-sum-text {
+      font-size: 12px; color: var(--t1); line-height: 1.65;
+      background: var(--bg); border-radius: 8px; padding: 10px 12px;
+    }
 
-    /* ── ROW 4: Forecast ─────────────────────────────────────── */
-    .forecast-card { padding: 16px 20px 20px; }
-    .forecast-hd {
-      display: flex; align-items: center; gap: 10px;
-      margin-bottom: 16px;
+    /* ─────────────────── VIEW 2: Analytics ────────────── */
+    .an-grid { display: flex; flex-direction: column; gap: 12px; }
+    .an-row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+    /* ─────────────────── VIEW 3: Forecast ─────────────── */
+    .fc-card { padding: 18px 20px 22px; }
+    .fc-hd {
+      display: flex; align-items: center; gap: 10px; margin-bottom: 18px;
     }
     .live-pill {
-      font-size: 10px; font-weight: 700; letter-spacing: .4px;
+      font-size: 10px; font-weight: 700;
       background: #D1FAE5; color: #065F46;
-      border: 1px solid #A7F3D0;
-      padding: 2px 8px; border-radius: 20px;
+      border: 1px solid #A7F3D0; padding: 2px 8px; border-radius: 20px;
     }
-    .forecast-body {
-      display: flex; gap: 20px;
-      align-items: flex-start; flex-wrap: wrap;
+    .fc-body {
+      display: flex; gap: 20px; align-items: flex-start; flex-wrap: wrap;
     }
     .fc-kpis { display: flex; gap: 20px; flex-shrink: 0; }
-    .fc-kpi  { min-width: 110px; }
+    .fc-kpi  { min-width: 105px; }
     .fc-kpi-label {
       font-size: 10px; font-weight: 700; text-transform: uppercase;
-      letter-spacing: .55px; color: var(--t2); margin-bottom: 5px;
+      letter-spacing: .6px; color: var(--t2); margin-bottom: 6px;
     }
-    .fc-kpi-value { font-size: 26px; font-weight: 800; letter-spacing: -.5px; line-height: 1.05; }
+    .fc-kpi-value { font-size: 27px; font-weight: 800; letter-spacing: -.5px; line-height: 1.05; }
     .fc-kpi-unit  { font-size: 11px; color: var(--t3); margin-top: 3px; }
     .fc-sep { width: 1px; background: var(--border); align-self: stretch; flex-shrink: 0; }
-    .fc-stockouts { min-width: 150px; flex-shrink: 0; }
+    .fc-stockouts { min-width: 140px; flex-shrink: 0; }
     .fc-stockouts-label {
       font-size: 10px; font-weight: 700; text-transform: uppercase;
-      letter-spacing: .55px; color: var(--t2); margin-bottom: 8px;
+      letter-spacing: .6px; color: var(--t2); margin-bottom: 8px;
     }
     .stockout-item {
       display: flex; justify-content: space-between; align-items: center;
-      padding: 3px 0; font-size: 12px;
-      border-bottom: 1px solid var(--bg);
+      padding: 4px 0; font-size: 12px; border-bottom: 1px solid var(--bg);
     }
     .stockout-days { font-weight: 700; font-size: 11px; }
-    .fc-summary    { flex: 1; min-width: 200px; }
-    .fc-sum-label  {
+    .fc-summary { flex: 1; min-width: 200px; }
+    .fc-sum-label {
       font-size: 10px; font-weight: 700; text-transform: uppercase;
-      letter-spacing: .55px; color: var(--t2); margin-bottom: 8px;
+      letter-spacing: .6px; color: var(--t2); margin-bottom: 8px;
     }
     .fc-sum-text {
       font-size: 13px; color: var(--t1); line-height: 1.65;
-      background: var(--bg); border-radius: 10px;
-      padding: 11px 14px;
+      background: var(--bg); border-radius: 10px; padding: 12px 14px;
     }
     .trend-chip {
-      display: inline-flex; align-items: center; gap: 4px;
-      padding: 3px 10px; border-radius: 20px;
-      font-size: 10px; font-weight: 700; letter-spacing: .4px;
-      margin-left: 6px;
+      display: inline-flex; align-items: center;
+      padding: 3px 9px; border-radius: 20px;
+      font-size: 10px; font-weight: 700; letter-spacing: .4px; margin-left: 6px;
+      vertical-align: middle;
     }
     .trend-chip.declining { background: #FEE2E2; color: #991B1B; }
     .trend-chip.stable    { background: #F3F4F6; color: #374151; }
     .trend-chip.growing   { background: #D1FAE5; color: #065F46; }
 
-    /* ── ROW 5: Chat + Alerts ────────────────────────────────── */
-    .row-bottom {
-      display: grid; grid-template-columns: 1fr 1fr;
-      gap: var(--gap); height: 440px; min-height: 440px;
+    /* ─────────────────── VIEW 4: Chat ─────────────────── */
+    .chat-card {
+      flex: 1; display: flex; flex-direction: column; overflow: hidden;
     }
-    .chat-panel, .alerts-panel {
-      display: flex; flex-direction: column; overflow: hidden;
-    }
-    .panel-hd {
-      padding: 12px 16px; border-bottom: 1px solid var(--border);
-      font-size: 13px; font-weight: 600; color: var(--t1);
-      display: flex; align-items: center; justify-content: space-between;
-      flex-shrink: 0;
-    }
-    /* Chat */
     .chat-body {
       flex: 1; overflow-y: auto;
-      padding: 14px; display: flex; flex-direction: column; gap: 10px;
+      padding: 16px; display: flex; flex-direction: column; gap: 10px;
     }
-    .msg { display: flex; flex-direction: column; max-width: 82%; }
+    .msg { display: flex; flex-direction: column; max-width: 80%; }
     .msg.user { align-self: flex-end;  align-items: flex-end; }
     .msg.kira { align-self: flex-start; align-items: flex-start; }
     .msg-sender { font-size: 11px; color: var(--t3); margin-bottom: 3px; padding: 0 4px; }
@@ -259,8 +353,8 @@
     .msg.user .msg-bubble { background: #2563EB; color: #fff; border-bottom-right-radius: 4px; }
     .msg.kira .msg-bubble { background: #F1F5F9; color: var(--t1); border-bottom-left-radius: 4px; }
     .empty-state {
-      text-align: center; padding: 32px 16px;
-      color: var(--t3); font-size: 13px; line-height: 1.6;
+      text-align: center; padding: 40px 16px;
+      color: var(--t3); font-size: 13px; line-height: 1.7;
     }
     .typing-dots { display: inline-flex; gap: 4px; align-items: center; }
     .typing-dots span {
@@ -271,418 +365,504 @@
     .typing-dots span:nth-child(3) { animation-delay: .4s; }
     @keyframes bounce {
       0%,60%,100% { transform: translateY(0); }
-      30%          { transform: translateY(-5px); }
+      30%          { transform: translateY(-6px); }
     }
     .chat-input-row {
       padding: 10px 14px; border-top: 1px solid var(--border);
       display: flex; gap: 8px; align-items: flex-end; flex-shrink: 0;
+      background: var(--card);
     }
     .chat-input {
       flex: 1; border: 1px solid var(--border); border-radius: 10px;
       padding: 9px 12px; font-size: 13px; resize: none; outline: none;
       min-height: 38px; max-height: 110px; font-family: inherit;
-      line-height: 1.45; color: var(--t1);
-      transition: border-color .15s, box-shadow .15s;
+      line-height: 1.45; color: var(--t1); transition: border-color .15s, box-shadow .15s;
     }
     .chat-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(37,99,235,.1); }
+
     /* Receipt card */
     .receipt-card {
       background: #fff; border: 1px solid var(--border);
       border-radius: 10px; padding: 12px 14px;
-      font-size: 13px; min-width: 220px; max-width: 290px;
+      font-size: 13px; min-width: 210px; max-width: 280px;
     }
     .receipt-title { font-weight: 700; margin-bottom: 4px; }
     .receipt-meta  { font-size: 11px; color: var(--t2); margin-bottom: 8px; }
-    .receipt-rows  { border-top: 1px solid var(--bg); border-bottom: 1px solid var(--bg); padding: 6px 0; margin-bottom: 6px; }
+    .receipt-rows  { border-top: 1px solid var(--bg); border-bottom: 1px solid var(--bg); padding: 5px 0; margin-bottom: 6px; }
     .receipt-row   { display: flex; justify-content: space-between; padding: 2px 0; }
     .receipt-total { font-weight: 700; display: flex; justify-content: space-between; }
     .receipt-prompt { font-size: 12px; color: var(--t2); margin-top: 8px; }
     .receipt-btns  { display: flex; gap: 8px; margin-top: 6px; }
-    /* Alerts */
-    .alerts-body {
-      flex: 1; overflow-y: auto;
-      padding: 10px; display: flex; flex-direction: column; gap: 8px;
+
+    /* ─────────────────── VIEW 5: Alerts ───────────────── */
+    /*
+      BUG FIX: Previous version had overflow:hidden + no explicit height
+      on .alert-card, causing the "KENAPA INI PENTING" body to be clipped.
+      Fix: remove all height/overflow constraints so cards grow to content.
+    */
+    .alerts-list {
+      display: flex; flex-direction: column; gap: 14px;
     }
     .alert-card {
-      border: 1px solid var(--border); border-left-width: 3px;
-      border-radius: 10px; overflow: hidden;
+      border: 1px solid var(--border);
+      border-left: 4px solid var(--border);
+      border-radius: 12px;
+      /* No overflow:hidden, no max-height — let content expand freely */
+      background: var(--card);
+      box-shadow: var(--sh);
     }
     .alert-card.critical { border-left-color: var(--red); }
     .alert-card.high     { border-left-color: #F97316; }
     .alert-card.medium   { border-left-color: var(--amber); }
-    .alert-hd {
-      padding: 8px 12px; background: #FAFAFA;
-      display: flex; align-items: center; gap: 7px;
-    }
-    .alert-cat   { font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: .6px; color: var(--t2); }
-    .alert-item  { font-size: 13px; font-weight: 600; flex: 1; }
-    .alert-score { font-size: 10px; color: var(--t3); }
-    .alert-bd { padding: 8px 12px; font-size: 12px; line-height: 1.55; }
-    .sec-label { font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: .6px; color: var(--t3); margin-bottom: 2px; }
-    .sec-text  { color: var(--t2); margin-bottom: 8px; }
-    .next-step { background: #F0FDF4; border-left: 3px solid var(--green); padding: 6px 10px; border-radius: 0 6px 6px 0; color: #166534; }
 
-    /* ── Buttons ─────────────────────────────────────────────── */
+    .alert-hd {
+      padding: 10px 16px;
+      background: #FAFAFA;
+      border-radius: 11px 11px 0 0;
+      display: flex; align-items: center; gap: 8px;
+      border-bottom: 1px solid var(--border);
+    }
+    .alert-cat  {
+      font-size: 9px; font-weight: 800; text-transform: uppercase;
+      letter-spacing: .6px; color: var(--t2);
+    }
+    .alert-item { font-size: 14px; font-weight: 700; flex: 1; color: var(--t1); }
+    .alert-score {
+      font-size: 10px; color: var(--t3);
+      background: var(--bg); padding: 2px 8px; border-radius: 10px; flex-shrink: 0;
+    }
+
+    /* Alert body — no overflow:hidden, full content visible */
+    .alert-bd { padding: 14px 16px; }
+
+    .sec-label {
+      font-size: 9px; font-weight: 800; text-transform: uppercase;
+      letter-spacing: .6px; color: var(--t3);
+      margin-bottom: 4px;
+    }
+    /* First sec-label needs no top margin */
+    .alert-bd > .sec-label:first-child { margin-top: 0; }
+    .alert-bd > .sec-label:not(:first-child) { margin-top: 12px; }
+
+    .sec-text {
+      font-size: 13px; color: var(--t2); line-height: 1.65;
+      /* No max-height, no overflow — show everything */
+    }
+
+    .next-step {
+      margin-top: 10px;
+      background: #F0FDF4; border-left: 3px solid var(--green);
+      padding: 9px 13px; border-radius: 0 8px 8px 0;
+      color: #166534; font-size: 13px; line-height: 1.6;
+    }
+
+    /* ─────────────────── Shared buttons ────────────────── */
     .btn {
       padding: 8px 14px; border-radius: 8px; border: none;
       cursor: pointer; font-size: 12px; font-weight: 600;
       font-family: inherit; transition: opacity .15s; white-space: nowrap;
+      display: inline-flex; align-items: center; justify-content: center;
     }
     .btn:hover:not(:disabled) { opacity: .82; }
     .btn:disabled { opacity: .45; cursor: not-allowed; }
     .btn-primary   { background: var(--accent); color: #fff; }
-    .btn-secondary { background: var(--bg); color: var(--t1); }
-    .btn-icon      { background: var(--bg); color: var(--t1); padding: 8px 11px; font-size: 16px; }
-    .btn-sm        { padding: 5px 11px; font-size: 11px; }
+    .btn-secondary { background: #EEF2F7; color: var(--t1); border: 1px solid var(--border); }
+    .btn-icon      { background: #EEF2F7; color: var(--t1); padding: 8px 10px; font-size: 16px; border-radius: 8px; border: 1px solid var(--border); cursor: pointer; }
+    .btn-sm        { padding: 5px 12px; font-size: 11px; }
     .btn-confirm   { background: #059669; color: #fff; }
 
-    /* ── Footer ─────────────────────────────────────────────── */
-    .footer {
-      padding: 10px 20px; background: var(--card);
-      border-top: 1px solid var(--border);
-      display: flex; align-items: center; gap: 12px; flex-shrink: 0;
-    }
-    .footer-label { font-size: 12px; font-weight: 600; color: var(--t2); }
-    .user-pills { display: flex; gap: 6px; }
-    .user-pill {
-      padding: 5px 14px; border-radius: 20px;
-      font-size: 12px; font-weight: 500; cursor: pointer;
-      border: 1.5px solid var(--border); background: #fff; color: var(--t2);
-      transition: all .15s; font-family: inherit;
-    }
-    .user-pill.active { border-color: var(--accent); background: var(--al); color: var(--accent); }
-    .footer-mode { margin-left: auto; font-size: 11px; color: var(--t3); }
-
-    /* ── AMD Modal ───────────────────────────────────────────── */
+    /* ─────────────────── AMD Modal ─────────────────────── */
     .overlay {
       display: none; position: fixed; inset: 0;
-      background: rgba(0,0,0,.45); z-index: 200;
+      background: rgba(0,0,0,.5); z-index: 300;
       align-items: center; justify-content: center;
     }
     .overlay.open { display: flex; }
     .modal {
-      background: #fff; border-radius: 14px; padding: 24px;
+      background: #fff; border-radius: 16px; padding: 26px;
       max-width: 420px; width: 90%;
-      box-shadow: 0 20px 60px rgba(0,0,0,.2);
+      box-shadow: 0 24px 60px rgba(0,0,0,.22);
     }
     .modal h3 { font-size: 16px; margin-bottom: 12px; }
-    .modal p  { font-size: 13px; line-height: 1.65; color: var(--t2); margin-bottom: 10px; }
+    .modal p  { font-size: 13px; line-height: 1.7; color: var(--t2); margin-bottom: 10px; }
     .modal code { background: var(--bg); padding: 1px 5px; border-radius: 4px; font-size: 12px; }
 
-    /* ── Scrollbar ───────────────────────────────────────────── */
+    /* ─────────────────── Scrollbar ─────────────────────── */
     ::-webkit-scrollbar       { width: 4px; }
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 2px; }
+
+    /* Sidebar scrollbar */
+    .sidebar::-webkit-scrollbar { width: 3px; }
+    .sidebar::-webkit-scrollbar-thumb { background: rgba(255,255,255,.15); }
   </style>
 </head>
 <body>
 
-<!-- ── Topbar ─────────────────────────────────────────────────── -->
-<header class="topbar">
-  <div class="logo">Kira<em>AI</em></div>
-  <div class="biz-pill">
-    <div class="biz-dot"></div>
-    <span class="biz-name" id="bizName">—</span>
-  </div>
-  <div class="spacer"></div>
-  <button class="amd-btn" onclick="openAmd()">AMD MI300X ▸</button>
-  <div class="lang-switch">
-    <button class="lang-btn active" id="btnId" onclick="setLang('id')">ID</button>
-    <button class="lang-btn"        id="btnEn" onclick="setLang('en')">EN</button>
-  </div>
-</header>
+<!-- ══════════════════ SIDEBAR ══════════════════ -->
+<aside class="sidebar">
 
-<!-- ── Dashboard ──────────────────────────────────────────────── -->
-<div class="dashboard">
-
-  <!-- ROW 1: Metric cards -->
-  <div class="metrics-row">
-    <div class="card metric-card" id="cardCash">
-      <div class="metric-label" id="lbCash">Kas Hari Ini</div>
-      <div class="metric-value" id="valCash">—</div>
-      <div class="metric-sub"  id="subCash"></div>
-    </div>
-    <div class="card metric-card" id="cardProfit">
-      <div class="metric-label" id="lbProfit">Profit Hari Ini</div>
-      <div class="metric-value" id="valProfit">—</div>
-      <div class="metric-sub"  id="subProfit"></div>
-    </div>
-    <div class="card metric-card" id="cardStock">
-      <div class="metric-label" id="lbStock">Stok Kritis</div>
-      <div class="metric-value" id="valStock">—</div>
-      <div class="metric-sub"  id="subStock"></div>
-    </div>
-    <div class="card metric-card" id="cardLosing">
-      <div class="metric-label" id="lbLosing">Produk Merugi</div>
-      <div class="metric-value" id="valLosing">—</div>
-      <div class="metric-sub"  id="subLosing"></div>
-    </div>
+  <!-- Logo -->
+  <div class="sb-logo">
+    <div class="sb-logo-text">Kira<em>AI</em></div>
+    <div class="sb-logo-sub">Business Intelligence</div>
   </div>
 
-  <!-- ROW 2: Sales trend line + Cash runway donut -->
-  <div class="row-top-charts">
+  <!-- Active business name -->
+  <div class="sb-biz">
+    <div class="sb-biz-dot"></div>
+    <span class="sb-biz-name" id="bizName">—</span>
+  </div>
 
-    <!-- Sales 30-day line chart -->
-    <div class="card">
-      <div class="card-hd">
-        <span class="card-title" id="titleSales">Tren Penjualan 30 Hari</span>
-        <span class="badge" id="badgeSales">memuat…</span>
-      </div>
-      <div class="chart-pad">
-        <div class="chart-h200"><canvas id="salesCanvas"></canvas></div>
+  <!-- Nav -->
+  <nav class="sb-nav">
+    <div class="sb-section-label" id="navSectionLabel">MENU</div>
+
+    <div class="sb-nav-item active" data-view="overview" onclick="showView('overview')">
+      <span class="sb-nav-icon">🏠</span>
+      <span class="sb-nav-label" id="navOv">Ringkasan</span>
+    </div>
+    <div class="sb-nav-item" data-view="analytics" onclick="showView('analytics')">
+      <span class="sb-nav-icon">📊</span>
+      <span class="sb-nav-label" id="navAn">Analitik</span>
+    </div>
+    <div class="sb-nav-item" data-view="forecast" onclick="showView('forecast')">
+      <span class="sb-nav-icon">🔮</span>
+      <span class="sb-nav-label" id="navFc">Forecast</span>
+    </div>
+    <div class="sb-nav-item" data-view="chat" onclick="showView('chat')">
+      <span class="sb-nav-icon">💬</span>
+      <span class="sb-nav-label" id="navCh">Chat Kira</span>
+    </div>
+    <div class="sb-nav-item" data-view="alerts" onclick="showView('alerts')">
+      <span class="sb-nav-icon">🔔</span>
+      <span class="sb-nav-label" id="navAl">Peringatan</span>
+    </div>
+  </nav>
+
+  <!-- Business selector -->
+  <div class="sb-users">
+    <div class="sb-users-label" id="usersLabel">BISNIS</div>
+    <div class="sb-user-item active" data-uid="user_001" onclick="switchUser('user_001')">
+      <div class="sb-user-dot"></div>
+      <span>user_001</span>
+    </div>
+    <div class="sb-user-item" data-uid="user_002" onclick="switchUser('user_002')">
+      <div class="sb-user-dot"></div>
+      <span>user_002</span>
+    </div>
+    <div class="sb-user-item" data-uid="user_003" onclick="switchUser('user_003')">
+      <div class="sb-user-dot"></div>
+      <span>user_003</span>
+    </div>
+  </div>
+
+  <!-- Bottom: lang, AMD, status -->
+  <div class="sb-bottom">
+    <div class="sb-lang-row">
+      <span class="sb-lang-label" id="langLabel">Bahasa</span>
+      <div class="lang-switch">
+        <button class="lang-btn active" id="btnId" onclick="setLang('id')">ID</button>
+        <button class="lang-btn"        id="btnEn" onclick="setLang('en')">EN</button>
       </div>
     </div>
+    <button class="amd-btn" onclick="openAmd()">⚡ AMD MI300X ▸</button>
+    <div class="sb-mode" id="modeStatus">mode: — · firestore: —</div>
+  </div>
 
-    <!-- Cash runway donut -->
-    <div class="card">
-      <div class="card-hd">
-        <span class="card-title" id="titleRunway">Cash Runway</span>
+</aside>
+
+<!-- ══════════════════ MAIN ══════════════════════ -->
+<div class="main">
+
+  <!-- Sticky view header -->
+  <div class="view-header">
+    <div>
+      <div class="vh-title" id="viewTitle">Ringkasan</div>
+      <div class="vh-sub"   id="viewSub">Gambaran umum bisnis Anda hari ini</div>
+    </div>
+    <div class="vh-actions" id="viewActions"></div>
+  </div>
+
+  <!-- View container -->
+  <div class="view-content" id="viewContent">
+
+    <!-- ══ VIEW 1 — Overview (default) ═════════════════ -->
+    <div id="view-overview" class="view active">
+
+      <!-- 4 metric cards -->
+      <div class="ov-metrics">
+        <div class="card metric-card" id="cardCash">
+          <div class="metric-label" id="lbCash">Kas Hari Ini</div>
+          <div class="metric-value" id="valCash">—</div>
+          <div class="metric-sub"   id="subCash"></div>
+        </div>
+        <div class="card metric-card" id="cardProfit">
+          <div class="metric-label" id="lbProfit">Profit Hari Ini</div>
+          <div class="metric-value" id="valProfit">—</div>
+          <div class="metric-sub"   id="subProfit"></div>
+        </div>
+        <div class="card metric-card" id="cardStock">
+          <div class="metric-label" id="lbStock">Stok Kritis</div>
+          <div class="metric-value" id="valStock">—</div>
+          <div class="metric-sub"   id="subStock"></div>
+        </div>
+        <div class="card metric-card" id="cardLosing">
+          <div class="metric-label" id="lbLosing">Produk Merugi</div>
+          <div class="metric-value" id="valLosing">—</div>
+          <div class="metric-sub"   id="subLosing"></div>
+        </div>
       </div>
-      <div class="runway-body">
-        <div class="runway-wrap">
-          <canvas id="runwayCanvas"></canvas>
-          <div class="runway-center">
-            <div class="runway-num"  id="runwayNum">—</div>
-            <div class="runway-unit" id="runwayUnit">hari</div>
+
+      <!-- 30-day sales + runway -->
+      <div class="ov-row2">
+        <div class="card">
+          <div class="card-hd">
+            <span class="card-title" id="titleSalesOv">Tren Penjualan 30 Hari</span>
+            <span class="badge" id="badgeSalesOv">—</span>
+          </div>
+          <div class="chart-pad">
+            <div class="h160"><canvas id="salesCanvasOv"></canvas></div>
           </div>
         </div>
-        <div class="runway-status ok" id="runwayStatus">—</div>
-      </div>
-    </div>
-
-  </div>
-
-  <!-- ROW 3: Inventory days bar + Product margin bar -->
-  <div class="row-mid-charts">
-
-    <!-- Inventory days remaining — horizontal bar -->
-    <div class="card">
-      <div class="card-hd">
-        <span class="card-title" id="titleStock">Stok per Item</span>
-        <span class="badge" id="badgeStock">memuat…</span>
-      </div>
-      <div class="chart-pad">
-        <div class="chart-h175"><canvas id="stockCanvas"></canvas></div>
-      </div>
-    </div>
-
-    <!-- Product gross margin — vertical bar -->
-    <div class="card">
-      <div class="card-hd">
-        <span class="card-title" id="titleMargin">Margin per Produk</span>
-        <span class="badge" id="badgeMargin">memuat…</span>
-      </div>
-      <div class="chart-pad">
-        <div class="chart-h175"><canvas id="marginCanvas"></canvas></div>
-      </div>
-    </div>
-
-  </div>
-
-  <!-- ROW 4: Business forecast panel -->
-  <div class="card forecast-card">
-    <div class="forecast-hd">
-      <span class="card-title" id="titleForecast">Forecast Bisnis</span>
-      <span class="live-pill">live data</span>
-    </div>
-    <div id="forecastBody">
-      <div class="empty-state" id="fcLoading">Memuat forecast…</div>
-    </div>
-  </div>
-
-  <!-- ROW 5: Chat + Alerts -->
-  <div class="row-bottom">
-
-    <!-- Chat -->
-    <div class="card chat-panel">
-      <div class="panel-hd">
-        <span id="chatTitle">💬 Chat dengan Kira</span>
-      </div>
-      <div class="chat-body" id="chatBody">
-        <div class="empty-state" id="chatEmpty">
-          <span id="chatHint">Tanya Kira tentang stok, keuangan, atau strategi bisnis Anda.</span>
+        <div class="card">
+          <div class="card-hd">
+            <span class="card-title" id="titleRunway">Cash Runway</span>
+          </div>
+          <div class="runway-body">
+            <div class="runway-wrap">
+              <canvas id="runwayCanvas"></canvas>
+              <div class="runway-center">
+                <div class="runway-num"  id="runwayNum">—</div>
+                <div class="runway-unit" id="runwayUnit">hari</div>
+              </div>
+            </div>
+            <div class="runway-status ok" id="runwayStatus">—</div>
+          </div>
         </div>
       </div>
-      <div class="chat-input-row">
-        <textarea class="chat-input" id="chatInput" rows="1"
-          placeholder="Ketik pesan…"
-          onkeydown="onInputKey(event)"
-          oninput="autoGrow(this)"></textarea>
-        <button class="btn btn-icon" title="Scan nota" onclick="pickReceipt()">📷</button>
-        <button class="btn btn-primary" id="sendBtn" onclick="sendChat()">
-          <span id="sendLabel">Kirim</span>
-        </button>
-        <input type="file" id="fileInput" accept="image/*" style="display:none"
-               onchange="onReceiptFile(this)">
+
+      <!-- Compact forecast summary -->
+      <div class="card">
+        <div class="card-hd">
+          <span class="card-title" id="titleOvFc">Ringkasan Forecast</span>
+        </div>
+        <div class="ov-fc" id="ovFcBody">
+          <span style="font-size:12px;color:var(--t3)">Memuat…</span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ══ VIEW 2 — Analytics ═══════════════════════════ -->
+    <div id="view-analytics" class="view">
+      <div class="an-grid">
+
+        <!-- Full sales line chart -->
+        <div class="card">
+          <div class="card-hd">
+            <span class="card-title" id="titleSalesAn">Tren Penjualan 30 Hari</span>
+            <span class="badge" id="badgeSalesAn">—</span>
+          </div>
+          <div class="chart-pad">
+            <div class="h220"><canvas id="salesCanvas"></canvas></div>
+          </div>
+        </div>
+
+        <!-- Stock + Margin side by side -->
+        <div class="an-row2">
+          <div class="card">
+            <div class="card-hd">
+              <span class="card-title" id="titleStockAn">Stok per Item</span>
+              <span class="badge" id="badgeStockAn">—</span>
+            </div>
+            <div class="chart-pad">
+              <div class="h200"><canvas id="stockCanvas"></canvas></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-hd">
+              <span class="card-title" id="titleMarginAn">Margin per Produk</span>
+              <span class="badge" id="badgeMarginAn">—</span>
+            </div>
+            <div class="chart-pad">
+              <div class="h200"><canvas id="marginCanvas"></canvas></div>
+            </div>
+          </div>
+        </div>
+
       </div>
     </div>
 
-    <!-- Proactive alerts -->
-    <div class="card alerts-panel">
-      <div class="panel-hd">
-        <span id="alertsTitle">🔔 Peringatan Proaktif</span>
-        <button class="btn btn-secondary btn-sm" onclick="loadAlerts()">
-          <span id="refreshLabel">Refresh</span>
-        </button>
+    <!-- ══ VIEW 3 — Forecast ════════════════════════════ -->
+    <div id="view-forecast" class="view">
+      <div class="card fc-card">
+        <div class="fc-hd">
+          <span class="card-title" id="titleFcView">Forecast Bisnis</span>
+          <span class="live-pill">live data</span>
+        </div>
+        <div id="forecastBody">
+          <div class="empty-state" style="padding:20px">Memuat forecast…</div>
+        </div>
       </div>
-      <div class="alerts-body" id="alertsBody">
+    </div>
+
+    <!-- ══ VIEW 4 — Chat ════════════════════════════════ -->
+    <div id="view-chat" class="view">
+      <div class="card chat-card">
+        <div class="chat-body" id="chatBody">
+          <div class="empty-state" id="chatEmpty">
+            <div style="font-size:36px;margin-bottom:12px">💬</div>
+            <strong id="chatEmptyTitle" style="color:var(--t1);font-size:15px;display:block;margin-bottom:6px">Halo! Saya Kira.</strong>
+            <span id="chatHint">Tanya soal stok, keuangan, atau strategi bisnis Anda.</span>
+          </div>
+        </div>
+        <div class="chat-input-row">
+          <textarea class="chat-input" id="chatInput" rows="1"
+            placeholder="Ketik pesan…"
+            onkeydown="onInputKey(event)"
+            oninput="autoGrow(this)"></textarea>
+          <button class="btn-icon" title="Scan nota" onclick="pickReceipt()">📷</button>
+          <button class="btn btn-primary" id="sendBtn" onclick="sendChat()">
+            <span id="sendLabel">Kirim</span>
+          </button>
+          <input type="file" id="fileInput" accept="image/*" style="display:none"
+                 onchange="onReceiptFile(this)">
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ VIEW 5 — Alerts ══════════════════════════════ -->
+    <div id="view-alerts" class="view">
+      <div class="alerts-list" id="alertsBody">
         <div class="empty-state" id="alertsEmpty">
           <span id="alertsHint">Memuat peringatan…</span>
         </div>
       </div>
     </div>
 
-  </div>
-</div>
+  </div><!-- /view-content -->
+</div><!-- /main -->
 
-<!-- ── Footer ─────────────────────────────────────────────────── -->
-<footer class="footer">
-  <span class="footer-label" id="bizLabel">Bisnis:</span>
-  <div class="user-pills">
-    <button class="user-pill active" data-uid="user_001" onclick="switchUser('user_001')">user_001</button>
-    <button class="user-pill"       data-uid="user_002" onclick="switchUser('user_002')">user_002</button>
-    <button class="user-pill"       data-uid="user_003" onclick="switchUser('user_003')">user_003</button>
-  </div>
-  <span class="footer-mode" id="footerMode">mode: —</span>
-</footer>
-
-<!-- ── AMD Modal ──────────────────────────────────────────────── -->
+<!-- ══ AMD Modal ════════════════════════════════════════ -->
 <div class="overlay" id="amdOverlay" onclick="overlayClick(event)">
-  <div class="modal" id="amdModal">
+  <div class="modal">
     <h3>🖥️ AMD MI300X — Inferensi 70B</h3>
     <p>Kira menggunakan model bahasa <strong>70 miliar parameter</strong>
-      (Llama-3.1-70B / Qwen2.5-72B) untuk analisis bisnis mendalam.
-      Model ini dijalankan di GPU <strong>AMD MI300X</strong> melalui
-      endpoint vLLM yang kompatibel dengan OpenAI API — tanpa perubahan kode apa pun.</p>
+       (Llama-3.1-70B / Qwen2.5-72B) untuk analisis bisnis mendalam.
+       Model ini dijalankan di GPU <strong>AMD MI300X</strong> melalui
+       endpoint vLLM yang kompatibel dengan OpenAI API — tanpa perubahan kode apa pun.</p>
     <p><strong>Reasoning Agent</strong> memanggil model 70B ini setiap ada alert
-      bisnis yang butuh analisis: mengapa situasinya terjadi, dampak finansialnya,
-      dan satu langkah konkret untuk pemilik warung.</p>
+       bisnis yang butuh analisis: mengapa situasinya terjadi, dampak finansialnya,
+       dan satu langkah konkret untuk pemilik warung.</p>
     <p>Endpoint dikonfigurasi via <code>REASONING_BASE_URL</code> di environment.
-      Ganti URL ke AMD Developer Cloud atau Fireworks AI — tidak ada perubahan
-      kode yang diperlukan.</p>
+       Ganti URL ke AMD Developer Cloud atau Fireworks AI — tidak ada perubahan
+       kode yang diperlukan.</p>
     <button class="btn btn-primary" style="width:100%;margin-top:14px"
             onclick="closeAmd()">Tutup</button>
   </div>
 </div>
 
 <script>
-/* ── State ───────────────────────────────────────────────────── */
-let uid  = 'user_001';
-let lang = 'id';
+/* ═══════════════════════════════════════════════
+   STATE
+═══════════════════════════════════════════════ */
+let uid         = 'user_001';
+let lang        = 'id';
+let _activeView = 'overview';
 
-let salesChart  = null;
-let runwayChart = null;
-let stockChart  = null;
-let marginChart = null;
+// Cached API data — reused on language switch & view switch
+let _bizData     = null;
+let _historyData = null;
+let _fcData      = null;
 
-// Cached last API responses — used for language-switch re-renders
-let _bizData = null;
-let _fcData  = null;
+// Chart instances — destroyed and recreated on business switch
+let salesChartOv = null;
+let runwayChart  = null;
+let salesChart   = null;
+let stockChart   = null;
+let marginChart  = null;
 
-/* ── Translations ────────────────────────────────────────────── */
+/* ═══════════════════════════════════════════════
+   TRANSLATIONS
+═══════════════════════════════════════════════ */
 const T = {
   id: {
-    chatTitle:    '💬 Chat dengan Kira',
-    chatHint:     'Tanya Kira tentang stok, keuangan, atau strategi bisnis Anda.',
-    alertsTitle:  '🔔 Peringatan Proaktif',
-    alertsHint:   'Memuat peringatan…',
-    noAlerts:     'Tidak ada peringatan aktif. Semua aman ✅',
-    bizLabel:     'Bisnis:',
-    refreshLabel: 'Refresh',
-    sendLabel:    'Kirim',
-    placeholder:  'Ketik pesan…',
-    you:          'Anda',
-    kira:         'Kira',
-    lbCash:       'Kas Hari Ini',
-    lbProfit:     'Profit Hari Ini',
-    lbStock:      'Stok Kritis',
-    lbLosing:     'Produk Merugi',
-    titleSales:   'Tren Penjualan 30 Hari',
-    titleRunway:  'Cash Runway',
-    titleStock:   'Stok per Item',
-    titleMargin:  'Margin per Produk',
-    titleForecast:'Forecast Bisnis',
-    runwayUnit:   'hari',
-    fcCash:       'Cash Runway',
-    fcTrend:      'Tren 7 Hari',
-    fcLoss:       'Rugi Produk/Bln',
-    fcStockout:   'Akan Habis ≤7 Hari',
-    fcSummary:    'Ringkasan',
-    fcVsPrior:    'vs minggu lalu',
-    fcNoLoss:     'Tidak ada',
-    fcDays:       'hari',
-    rkOk:         '🟢 Kas Aman',
-    rkWarn:       '🟡 Perlu Perhatian',
-    rkDanger:     '🔴 Kas Kritis',
-    whyLabel:     'KENAPA INI PENTING',
-    nextLabel:    'LANGKAH SELANJUTNYA',
-    tierLocal:    'Lokal (Tier 1)',
-    tierCloud:    'Cloud — Tier 2',
-    confidence:   'Kepercayaan',
-    rcptTitle:    'Hasil Scan Nota',
-    rcptPrompt:   'Mau saya catat ke buku kas?',
-    rcptYes:      'Ya, catat',
-    rcptNo:       'Tidak',
-    rcptDone:     '✅ Dicatat!',
-    rcptSkip:     'OK, dilewati.',
-    total:        'TOTAL',
-    errMsg:       'Terjadi kesalahan. Coba lagi.',
-    loading:      'memuat…',
-    daysSuffix:   'h',
+    navOv: 'Ringkasan', navAn: 'Analitik', navFc: 'Forecast',
+    navCh: 'Chat Kira', navAl: 'Peringatan',
+    navSectionLabel: 'MENU', usersLabel: 'BISNIS', langLabel: 'Bahasa',
+    vTitle: { overview:'Ringkasan', analytics:'Analitik', forecast:'Forecast', chat:'Chat Kira', alerts:'Peringatan' },
+    vSub:   {
+      overview:  'Gambaran umum bisnis Anda hari ini',
+      analytics: 'Grafik dan data lengkap',
+      forecast:  'Proyeksi bisnis ke depan',
+      chat:      'Tanya Kira apa saja',
+      alerts:    'Peringatan proaktif dari Kira',
+    },
+    lbCash:   'Kas Hari Ini', lbProfit: 'Profit Hari Ini',
+    lbStock:  'Stok Kritis',  lbLosing: 'Produk Merugi',
+    titleSales:'Tren Penjualan 30 Hari', titleRunway:'Cash Runway',
+    titleStock:'Stok per Item', titleMargin:'Margin per Produk',
+    titleFc:  'Forecast Bisnis', titleOvFc:'Ringkasan Forecast',
+    runwayUnit:'hari',
+    rkOk:'🟢 Kas Aman', rkWarn:'🟡 Perlu Perhatian', rkDanger:'🔴 Kas Kritis',
+    fcCash:'Cash Runway', fcTrend:'Tren 7 Hari', fcLoss:'Rugi Produk/Bln',
+    fcStockout:'Akan Habis ≤7 Hari', fcSummary:'Ringkasan', fcVsPrior:'vs minggu lalu',
+    fcNoLoss:'Tidak ada', fcDays:'hari', daysSuffix:'h',
+    whyLabel:'KENAPA INI PENTING', nextLabel:'LANGKAH SELANJUTNYA',
+    noAlerts:'Tidak ada peringatan aktif. Semua aman ✅',
+    you:'Anda', kira:'Kira',
+    chatEmptyTitle:'Halo! Saya Kira.',
+    chatHint:'Tanya soal stok, keuangan, atau strategi bisnis Anda.',
+    sendLabel:'Kirim', refreshLabel:'Refresh', placeholder:'Ketik pesan…',
+    errMsg:'Terjadi kesalahan. Coba lagi.',
+    loading:'memuat…',
+    total:'TOTAL', rcptTitle:'Hasil Scan Nota', rcptPrompt:'Mau saya catat ke buku kas?',
+    rcptYes:'Ya, catat', rcptNo:'Tidak', rcptDone:'✅ Dicatat!', rcptSkip:'OK, dilewati.',
+    confidence:'Kepercayaan', tierLocal:'Lokal', tierCloud:'Cloud',
+    tDown:'TURUN', tUp:'NAIK', tFlat:'STABIL',
   },
   en: {
-    chatTitle:    '💬 Chat with Kira',
-    chatHint:     'Ask Kira about your stock, finances, or business strategy.',
-    alertsTitle:  '🔔 Proactive Alerts',
-    alertsHint:   'Loading alerts…',
-    noAlerts:     'No active alerts. All clear ✅',
-    bizLabel:     'Business:',
-    refreshLabel: 'Refresh',
-    sendLabel:    'Send',
-    placeholder:  'Type a message…',
-    you:          'You',
-    kira:         'Kira',
-    lbCash:       "Today's Cash",
-    lbProfit:     "Today's Profit",
-    lbStock:      'Critical Stock',
-    lbLosing:     'Losing Products',
-    titleSales:   '30-Day Sales Trend',
-    titleRunway:  'Cash Runway',
-    titleStock:   'Stock per Item',
-    titleMargin:  'Margin per Product',
-    titleForecast:'Business Forecast',
-    runwayUnit:   'days',
-    fcCash:       'Cash Runway',
-    fcTrend:      '7-Day Trend',
-    fcLoss:       'Product Loss/Mo',
-    fcStockout:   'Running Out ≤7 Days',
-    fcSummary:    'Summary',
-    fcVsPrior:    'vs prior week',
-    fcNoLoss:     'None',
-    fcDays:       'days',
-    rkOk:         '🟢 Cash Healthy',
-    rkWarn:       '🟡 Needs Attention',
-    rkDanger:     '🔴 Cash Critical',
-    whyLabel:     'WHY THIS MATTERS',
-    nextLabel:    'NEXT STEP',
-    tierLocal:    'Local (Tier 1)',
-    tierCloud:    'Cloud — Tier 2',
-    confidence:   'Confidence',
-    rcptTitle:    'Receipt Scan Result',
-    rcptPrompt:   'Shall I record this in the cashbook?',
-    rcptYes:      'Yes, record',
-    rcptNo:       'No thanks',
-    rcptDone:     '✅ Recorded!',
-    rcptSkip:     'OK, skipped.',
-    total:        'TOTAL',
-    errMsg:       'Something went wrong. Please try again.',
-    loading:      'loading…',
-    daysSuffix:   'd',
+    navOv: 'Overview', navAn: 'Analytics', navFc: 'Forecast',
+    navCh: 'Chat Kira', navAl: 'Alerts',
+    navSectionLabel: 'MENU', usersLabel: 'BUSINESS', langLabel: 'Language',
+    vTitle: { overview:'Overview', analytics:'Analytics', forecast:'Forecast', chat:'Chat Kira', alerts:'Alerts' },
+    vSub:   {
+      overview:  'Your business at a glance today',
+      analytics: 'Charts and detailed data',
+      forecast:  'Business projections',
+      chat:      'Ask Kira anything',
+      alerts:    'Proactive alerts from Kira',
+    },
+    lbCash:   "Today's Cash", lbProfit: "Today's Profit",
+    lbStock:  'Critical Stock', lbLosing: 'Losing Products',
+    titleSales:'30-Day Sales Trend', titleRunway:'Cash Runway',
+    titleStock:'Stock per Item', titleMargin:'Margin per Product',
+    titleFc:  'Business Forecast', titleOvFc:'Forecast Summary',
+    runwayUnit:'days',
+    rkOk:'🟢 Cash Healthy', rkWarn:'🟡 Needs Attention', rkDanger:'🔴 Cash Critical',
+    fcCash:'Cash Runway', fcTrend:'7-Day Trend', fcLoss:'Product Loss/Mo',
+    fcStockout:'Running Out ≤7 Days', fcSummary:'Summary', fcVsPrior:'vs prior week',
+    fcNoLoss:'None', fcDays:'days', daysSuffix:'d',
+    whyLabel:'WHY THIS MATTERS', nextLabel:'NEXT STEP',
+    noAlerts:'No active alerts. All clear ✅',
+    you:'You', kira:'Kira',
+    chatEmptyTitle:"Hello! I'm Kira.",
+    chatHint:'Ask about stock, finances, or business strategy.',
+    sendLabel:'Send', refreshLabel:'Refresh', placeholder:'Type a message…',
+    errMsg:'Something went wrong. Please try again.',
+    loading:'loading…',
+    total:'TOTAL', rcptTitle:'Receipt Scan Result', rcptPrompt:'Shall I record this?',
+    rcptYes:'Yes, record', rcptNo:'No thanks', rcptDone:'✅ Recorded!', rcptSkip:'OK, skipped.',
+    confidence:'Confidence', tierLocal:'Local', tierCloud:'Cloud',
+    tDown:'DECLINING', tUp:'GROWING', tFlat:'STABLE',
   },
 };
-function t(k) { return T[lang][k] || k; }
+function t(k) { return T[lang][k] !== undefined ? T[lang][k] : k; }
 
-/* ── Boot ────────────────────────────────────────────────────── */
+/* ═══════════════════════════════════════════════
+   BOOT
+═══════════════════════════════════════════════ */
 document.addEventListener('DOMContentLoaded', () => {
   fetchHealth();
   refreshAll();
@@ -696,54 +876,136 @@ function refreshAll() {
   loadAlerts();
 }
 
-/* ── Language toggle ─────────────────────────────────────────── */
+/* ═══════════════════════════════════════════════
+   NAVIGATION
+═══════════════════════════════════════════════ */
+function showView(name) {
+  // Update sidebar nav
+  document.querySelectorAll('.sb-nav-item').forEach(el =>
+    el.classList.toggle('active', el.dataset.view === name)
+  );
+
+  // Toggle view panels
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById('view-' + name).classList.add('active');
+
+  // Chat view needs no-scroll on the content wrapper (it manages its own scroll)
+  document.getElementById('viewContent').classList.toggle('no-scroll', name === 'chat');
+
+  // Update view header
+  document.getElementById('viewTitle').textContent = T[lang].vTitle[name];
+  document.getElementById('viewSub').textContent   = T[lang].vSub[name];
+
+  // Per-view header actions
+  const actEl = document.getElementById('viewActions');
+  actEl.innerHTML = '';
+  if (name === 'alerts') {
+    const btn = document.createElement('button');
+    btn.className = 'btn btn-secondary btn-sm';
+    btn.textContent = t('refreshLabel');
+    btn.onclick = loadAlerts;
+    actEl.appendChild(btn);
+  }
+
+  _activeView = name;
+
+  // Resize charts in this view — must happen after display:block is applied
+  // requestAnimationFrame ensures the DOM has painted before we measure canvas size
+  requestAnimationFrame(() => _resizeViewCharts(name));
+}
+
+function _resizeViewCharts(name) {
+  if (name === 'overview') {
+    if (salesChartOv) salesChartOv.resize();
+    if (runwayChart)  runwayChart.resize();
+  } else if (name === 'analytics') {
+    if (salesChart)  salesChart.resize();
+    if (stockChart)  stockChart.resize();
+    if (marginChart) marginChart.resize();
+  }
+}
+
+/* ═══════════════════════════════════════════════
+   LANGUAGE TOGGLE
+═══════════════════════════════════════════════ */
 function setLang(l) {
   lang = l;
   document.getElementById('btnId').classList.toggle('active', l === 'id');
   document.getElementById('btnEn').classList.toggle('active', l === 'en');
-  applyStaticLabels();
-  document.getElementById('chatInput').placeholder = t('placeholder');
-  // Re-render cached data with new language
-  if (_bizData)  applyBizUI(_bizData);
-  if (_fcData)   { renderRunwayUI(_fcData); renderForecastPanel(_fcData); }
+  _applyStaticLabels();
+  // Re-render cached data with new labels (no network calls needed)
+  if (_bizData) applyBizUI(_bizData);
+  if (_fcData)  { renderRunwayUI(_fcData); renderForecastPanel(_fcData); renderOvForecast(_fcData); }
 }
 
-function applyStaticLabels() {
-  [
-    'chatTitle','alertsTitle','refreshLabel','sendLabel','bizLabel',
-    'lbCash','lbProfit','lbStock','lbLosing',
-    'titleSales','titleRunway','titleStock','titleMargin','titleForecast',
-  ].forEach(k => { const el = document.getElementById(k); if (el) el.textContent = t(k); });
-  const ah = document.getElementById('alertsHint');
-  if (ah) ah.textContent = t('alertsHint');
+function _applyStaticLabels() {
+  const ids = ['navOv','navAn','navFc','navCh','navAl',
+                'navSectionLabel','usersLabel','langLabel',
+                'lbCash','lbProfit','lbStock','lbLosing'];
+  ids.forEach(k => { const el = document.getElementById(k); if (el) el.textContent = t(k); });
+
+  // Chart card titles (same key, different element IDs)
+  const titleMap = {
+    titleSalesOv: 'titleSales', titleSalesAn: 'titleSales',
+    titleRunway:  'titleRunway',
+    titleStockAn: 'titleStock', titleMarginAn: 'titleMargin',
+    titleFcView:  'titleFc',    titleOvFc:     'titleOvFc',
+  };
+  Object.entries(titleMap).forEach(([id, tk]) => {
+    const el = document.getElementById(id); if (el) el.textContent = t(tk);
+  });
+
+  // View header
+  document.getElementById('viewTitle').textContent = T[lang].vTitle[_activeView];
+  document.getElementById('viewSub').textContent   = T[lang].vSub[_activeView];
+
+  // Runway unit (may have been set from cache)
+  const ru = document.getElementById('runwayUnit'); if (ru) ru.textContent = t('runwayUnit');
+
+  // Chat
+  const ce = document.getElementById('chatEmptyTitle'); if (ce) ce.textContent = t('chatEmptyTitle');
+  const ch = document.getElementById('chatHint');       if (ch) ch.textContent = t('chatHint');
+  const ci = document.getElementById('chatInput');      if (ci) ci.placeholder = t('placeholder');
+  const sl = document.getElementById('sendLabel');      if (sl) sl.textContent = t('sendLabel');
 }
 
-/* ── User switch ─────────────────────────────────────────────── */
+/* ═══════════════════════════════════════════════
+   BUSINESS SWITCH
+═══════════════════════════════════════════════ */
 function switchUser(newUid) {
   uid = newUid;
-  _bizData = null; _fcData = null;
-  document.querySelectorAll('.user-pill').forEach(b =>
+  _bizData = null; _historyData = null; _fcData = null;
+
+  document.querySelectorAll('.sb-user-item').forEach(b =>
     b.classList.toggle('active', b.dataset.uid === newUid)
   );
-  clearChat();
+  _clearChat();
   refreshAll();
 }
 
-function clearChat() {
-  document.getElementById('chatBody').innerHTML =
-    `<div class="empty-state" id="chatEmpty"><span id="chatHint">${esc(t('chatHint'))}</span></div>`;
+function _clearChat() {
+  document.getElementById('chatBody').innerHTML = `
+    <div class="empty-state" id="chatEmpty">
+      <div style="font-size:36px;margin-bottom:12px">💬</div>
+      <strong id="chatEmptyTitle" style="color:var(--t1);font-size:15px;display:block;margin-bottom:6px">${esc(t('chatEmptyTitle'))}</strong>
+      <span id="chatHint">${esc(t('chatHint'))}</span>
+    </div>`;
 }
 
-/* ── /health ─────────────────────────────────────────────────── */
+/* ═══════════════════════════════════════════════
+   /health
+═══════════════════════════════════════════════ */
 async function fetchHealth() {
   try {
     const d = await (await fetch('/health')).json();
-    document.getElementById('footerMode').textContent =
+    document.getElementById('modeStatus').textContent =
       `mode: ${d.mode} · firestore: ${d.firestore}`;
   } catch (_) {}
 }
 
-/* ── /business → metric cards + inventory/margin charts ─────── */
+/* ═══════════════════════════════════════════════
+   /business → metrics + stock/margin charts
+═══════════════════════════════════════════════ */
 async function fetchBusiness() {
   try {
     const d = await (await fetch(`/business/${uid}`)).json();
@@ -755,24 +1017,24 @@ async function fetchBusiness() {
 function applyBizUI(d) {
   document.getElementById('bizName').textContent = d.business_name;
 
-  setMetric('Cash',
-    formatRp(d.cash_balance),
+  _setMetric('Cash',
+    _fmtRp(d.cash_balance),
     d.cash_balance < 300000 ? 'danger' : d.cash_balance < 600000 ? 'warn' : 'ok',
     d.cash_balance < 300000 ? (lang==='id'?'⚠ Kas rendah':'⚠ Low cash') : '');
 
-  setMetric('Profit',
-    formatRp(d.net_profit),
+  _setMetric('Profit',
+    _fmtRp(d.net_profit),
     d.net_profit < 0 ? 'danger' : d.net_profit < 50000 ? 'warn' : 'ok',
     `margin ${d.gross_margin_pct}%`);
 
-  setMetric('Stock',
+  _setMetric('Stock',
     d.critical_stock_count,
     d.critical_stock_count > 2 ? 'danger' : d.critical_stock_count > 0 ? 'warn' : 'ok',
     d.critical_stock_count > 0
       ? (lang==='id' ? `dari ${d.inventory_count} item` : `of ${d.inventory_count} items`)
       : (lang==='id' ? 'Semua aman' : 'All clear'));
 
-  setMetric('Losing',
+  _setMetric('Losing',
     d.losing_product_count,
     d.losing_product_count > 0 ? 'danger' : 'ok',
     d.losing_product_count > 0
@@ -781,209 +1043,196 @@ function applyBizUI(d) {
 
   if (d.inventory_items && d.inventory_items.length) renderStockChart(d.inventory_items);
   if (d.product_margins && d.product_margins.length) renderMarginChart(d.product_margins);
+
+  // Resize analytics charts if currently visible
+  if (_activeView === 'analytics') requestAnimationFrame(() => _resizeViewCharts('analytics'));
 }
 
-function setMetric(id, display, color, sub) {
-  document.getElementById('card' + id).className = `card metric-card ${color}`;
-  const v = document.getElementById('val' + id);
-  v.textContent = display; v.className = `metric-value ${color}`;
-  const s = document.getElementById('sub' + id);
+function _setMetric(id, val, color, sub) {
+  document.getElementById('card'+id).className = `card metric-card ${color}`;
+  const v = document.getElementById('val'+id);
+  v.textContent = val; v.className = `metric-value ${color}`;
+  const s = document.getElementById('sub'+id);
   if (s) s.textContent = sub || '';
 }
 
-/* ── /sales-history → Line chart ────────────────────────────── */
+/* ═══════════════════════════════════════════════
+   /sales-history → sales line charts (overview + analytics)
+═══════════════════════════════════════════════ */
 async function fetchSalesHistory() {
-  setBadge('badgeSales', t('loading'));
+  _setBadge('badgeSalesOv', t('loading'));
+  _setBadge('badgeSalesAn', t('loading'));
   try {
     const d = await (await fetch(`/sales-history/${uid}`)).json();
-    renderSalesChart(d.history || []);
-    setBadge('badgeSales', `${(d.history||[]).length} ${lang==='id'?'hari':'days'}`);
+    _historyData = d.history || [];
+    _renderSalesChartOv(_historyData);
+    _renderSalesChartAn(_historyData);
+    const lbl = `${_historyData.length} ${lang==='id'?'hari':'days'}`;
+    _setBadge('badgeSalesOv', lbl);
+    _setBadge('badgeSalesAn', lbl);
+    requestAnimationFrame(() => _resizeViewCharts(_activeView));
   } catch (_) {
-    setBadge('badgeSales', 'error');
+    _setBadge('badgeSalesOv', 'error');
+    _setBadge('badgeSalesAn', 'error');
   }
 }
 
-function renderSalesChart(history) {
-  const labels = history.map(h => h.date.slice(5));                     // MM-DD
-  const data   = history.map(h => Math.round(h.revenue / 1000));        // Rp000
-
-  if (salesChart) { salesChart.destroy(); salesChart = null; }
-
-  const canvas = document.getElementById('salesCanvas');
-  const ctx    = canvas.getContext('2d');
-
-  const grad = ctx.createLinearGradient(0, 0, 0, 200);
-  grad.addColorStop(0, 'rgba(37,99,235,0.18)');
-  grad.addColorStop(1, 'rgba(37,99,235,0)');
-
-  salesChart = new Chart(ctx, {
+function _salesConfig(history, gradHeight) {
+  const labels = history.map(h => h.date.slice(5));
+  const data   = history.map(h => Math.round(h.revenue / 1000));
+  return {
     type: 'line',
     data: {
       labels,
       datasets: [{
         data,
         borderColor: '#2563EB',
-        backgroundColor: grad,
-        fill: true,
-        tension: 0.4,
-        pointRadius: 0,
-        pointHoverRadius: 5,
+        backgroundColor: '__GRAD__',  // placeholder, replaced below
+        fill: true, tension: 0.4,
+        pointRadius: 0, pointHoverRadius: 5,
         pointHoverBackgroundColor: '#2563EB',
         borderWidth: 2.5,
       }],
     },
     options: {
-      responsive: true,
-      maintainAspectRatio: false,
+      responsive: true, maintainAspectRatio: false,
       plugins: {
         legend: { display: false },
         tooltip: {
-          mode: 'index',
-          intersect: false,
-          callbacks: {
-            label: ctx => `Rp ${(ctx.raw * 1000).toLocaleString('id-ID')}`,
-          },
+          mode: 'index', intersect: false,
+          callbacks: { label: ctx => `Rp ${(ctx.raw*1000).toLocaleString('id-ID')}` },
         },
       },
       scales: {
-        x: {
-          ticks: { maxTicksLimit: 6, font: { size: 10 }, color: '#9CA3AF' },
-          grid:  { display: false },
-          border: { display: false },
-        },
-        y: {
-          ticks: {
-            callback: v => `${v}k`,
-            font: { size: 10 }, color: '#9CA3AF',
-          },
-          grid:  { color: 'rgba(0,0,0,0.04)' },
-          border: { display: false },
-        },
+        x: { ticks:{maxTicksLimit:6,font:{size:10},color:'#9CA3AF'}, grid:{display:false}, border:{display:false} },
+        y: { ticks:{callback:v=>`${v}k`,font:{size:10},color:'#9CA3AF'}, grid:{color:'rgba(0,0,0,0.04)'}, border:{display:false} },
       },
-      interaction: { mode: 'index', intersect: false },
+      interaction: { mode:'index', intersect:false },
     },
-  });
+  };
 }
 
-/* ── /forecast → Runway donut + Forecast panel ──────────────── */
+function _renderSalesChartOv(history) {
+  if (salesChartOv) { salesChartOv.destroy(); salesChartOv = null; }
+  const ctx  = document.getElementById('salesCanvasOv').getContext('2d');
+  const grad = ctx.createLinearGradient(0,0,0,160);
+  grad.addColorStop(0,'rgba(37,99,235,0.16)'); grad.addColorStop(1,'rgba(37,99,235,0)');
+  const cfg = _salesConfig(history, 160);
+  cfg.data.datasets[0].backgroundColor = grad;
+  salesChartOv = new Chart(ctx, cfg);
+}
+
+function _renderSalesChartAn(history) {
+  if (salesChart) { salesChart.destroy(); salesChart = null; }
+  const ctx  = document.getElementById('salesCanvas').getContext('2d');
+  const grad = ctx.createLinearGradient(0,0,0,220);
+  grad.addColorStop(0,'rgba(37,99,235,0.18)'); grad.addColorStop(1,'rgba(37,99,235,0)');
+  const cfg = _salesConfig(history, 220);
+  cfg.data.datasets[0].backgroundColor = grad;
+  salesChart = new Chart(ctx, cfg);
+}
+
+/* ═══════════════════════════════════════════════
+   /forecast → runway donut + forecast view + overview panel
+═══════════════════════════════════════════════ */
 async function fetchForecast() {
   try {
     const d = await (await fetch(`/forecast/${uid}`)).json();
     _fcData = d;
     renderRunwayUI(d);
     renderForecastPanel(d);
+    renderOvForecast(d);
+    requestAnimationFrame(() => _resizeViewCharts(_activeView));
   } catch (_) {
     document.getElementById('forecastBody').innerHTML =
-      `<div class="empty-state" style="color:var(--red)">
-        ${lang==='id' ? 'Gagal memuat forecast.' : 'Failed to load forecast.'}
-      </div>`;
+      `<div class="empty-state" style="color:var(--red)">${lang==='id'?'Gagal memuat.':'Failed to load.'}</div>`;
   }
 }
 
-function runwayColorClass(days) {
-  return days < 2 ? 'danger' : days < 7 ? 'warn' : 'ok';
-}
-function runwayHex(days) {
-  return days < 2 ? '#EF4444' : days < 7 ? '#F59E0B' : '#10B981';
-}
+function _runwayHex(days) { return days < 2 ? '#EF4444' : days < 7 ? '#F59E0B' : '#10B981'; }
+function _runwayCls(days) { return days < 2 ? 'danger' : days < 7 ? 'warn' : 'ok'; }
 
 function renderRunwayUI(fc) {
   const days  = fc.cash_runway_days;
-  const color = runwayHex(days);
-  const cls   = runwayColorClass(days);
-
-  // Donut chart
-  const filled = Math.min(days, 30);
-  const empty  = Math.max(0, 30 - filled);
+  const color = _runwayHex(days);
+  const cls   = _runwayCls(days);
 
   if (runwayChart) { runwayChart.destroy(); runwayChart = null; }
-
   const ctx = document.getElementById('runwayCanvas').getContext('2d');
   runwayChart = new Chart(ctx, {
     type: 'doughnut',
     data: {
       datasets: [{
-        data: [filled, empty],
-        backgroundColor: [color, '#F1F5F9'],
-        borderWidth: 0,
-        hoverOffset: 0,
+        data: [Math.min(days, 30), Math.max(0, 30 - days)],
+        backgroundColor: [color, '#E2E8F0'],
+        borderWidth: 0, hoverOffset: 0,
       }],
     },
     options: {
-      cutout: '76%',
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: { legend: { display: false }, tooltip: { enabled: false } },
-      animation: { duration: 700, easing: 'easeInOutQuart' },
+      cutout: '76%', responsive: true, maintainAspectRatio: false,
+      plugins: { legend:{display:false}, tooltip:{enabled:false} },
+      animation: { duration:700, easing:'easeInOutQuart' },
     },
   });
 
-  // Center overlay
   const numEl = document.getElementById('runwayNum');
-  numEl.textContent  = days.toFixed(1);
-  numEl.style.color  = color;
-  document.getElementById('runwayUnit').textContent = t('runwayUnit');
-
-  // Status badge below chart
-  const statusEl = document.getElementById('runwayStatus');
-  statusEl.textContent = t(cls === 'ok' ? 'rkOk' : cls === 'warn' ? 'rkWarn' : 'rkDanger');
-  statusEl.className   = `runway-status ${cls}`;
+  numEl.textContent = days.toFixed(1); numEl.style.color = color;
+  document.getElementById('runwayUnit').textContent   = t('runwayUnit');
+  const stEl = document.getElementById('runwayStatus');
+  stEl.textContent = t(cls==='ok'?'rkOk':cls==='warn'?'rkWarn':'rkDanger');
+  stEl.className   = `runway-status ${cls}`;
 }
 
 function renderForecastPanel(fc) {
-  const isId  = lang === 'id';
-  const tDown = fc.revenue_trend_7d === 'declining';
-  const tUp   = fc.revenue_trend_7d === 'growing';
-  const tArrow = tDown ? '↓' : tUp ? '↑' : '→';
-  const tColor = tDown ? '#EF4444' : tUp ? '#10B981' : '#6B7280';
-  const rColor = runwayHex(fc.cash_runway_days);
-  const loss   = fc.projected_monthly_loss_from_losing_products;
-  const pct    = fc.revenue_trend_pct;
+  const down  = fc.revenue_trend_7d === 'declining';
+  const up    = fc.revenue_trend_7d === 'growing';
+  const arrow = down ? '↓' : up ? '↑' : '→';
+  const tCol  = down ? '#EF4444' : up ? '#10B981' : '#6B7280';
+  const rCol  = _runwayHex(fc.cash_runway_days);
+  const loss  = fc.projected_monthly_loss_from_losing_products;
+  const pct   = fc.revenue_trend_pct;
   const pctStr = (pct > 0 ? '+' : '') + pct + '%';
-  const chipCls= tDown ? 'declining' : tUp ? 'growing' : 'stable';
-  const chipLbl= tDown ? (isId?'TURUN':'DECLINING') : tUp ? (isId?'NAIK':'GROWING') : (isId?'STABIL':'STABLE');
+  const chipCls = down ? 'declining' : up ? 'growing' : 'stable';
+  const chipLbl = down ? t('tDown') : up ? t('tUp') : t('tFlat');
 
-  const stockHtml = fc.stockout_forecast.slice(0, 5).map(s => {
-    const c = s.days_until_stockout < 2 ? '#EF4444'
-            : s.days_until_stockout < 5 ? '#F59E0B' : '#10B981';
+  const soHtml = fc.stockout_forecast.slice(0, 5).map(s => {
+    const c = s.days_until_stockout < 2 ? '#EF4444' : s.days_until_stockout < 5 ? '#F59E0B' : '#10B981';
     return `<div class="stockout-item">
       <span>${esc(s.item)}</span>
       <span class="stockout-days" style="color:${c}">${s.days_until_stockout}${t('daysSuffix')}</span>
     </div>`;
   }).join('') || `<span style="font-size:12px;color:var(--t3)">${t('fcNoLoss')}</span>`;
 
-  const fcSep = fc.stockout_forecast.length
+  const soSection = fc.stockout_forecast.length
     ? `<div class="fc-sep"></div>
        <div class="fc-stockouts">
-         <div class="fc-stockouts-label">${t('fcStockout')}</div>
-         ${stockHtml}
-       </div>`
-    : '';
+         <div class="fc-stockouts-label">${t('fcStockout')}</div>${soHtml}
+       </div>` : '';
 
   document.getElementById('forecastBody').innerHTML = `
-    <div class="forecast-body">
+    <div class="fc-body">
       <div class="fc-kpis">
         <div class="fc-kpi">
           <div class="fc-kpi-label">${t('fcCash')}</div>
-          <div class="fc-kpi-value" style="color:${rColor}">${fc.cash_runway_days.toFixed(1)}</div>
+          <div class="fc-kpi-value" style="color:${rCol}">${fc.cash_runway_days.toFixed(1)}</div>
           <div class="fc-kpi-unit">${t('fcDays')}</div>
         </div>
         <div class="fc-kpi">
           <div class="fc-kpi-label">${t('fcTrend')}</div>
-          <div class="fc-kpi-value" style="color:${tColor};font-size:22px">
-            ${tArrow} ${pctStr}
+          <div class="fc-kpi-value" style="color:${tCol};font-size:20px">
+            ${arrow} ${pctStr}
             <span class="trend-chip ${chipCls}">${chipLbl}</span>
           </div>
           <div class="fc-kpi-unit">${t('fcVsPrior')}</div>
         </div>
         <div class="fc-kpi">
           <div class="fc-kpi-label">${t('fcLoss')}</div>
-          <div class="fc-kpi-value" style="color:${loss>0?'#EF4444':'#10B981'};font-size:${loss>0?'18':'24'}px">
-            ${loss > 0 ? formatRp(loss) : t('fcNoLoss')}
+          <div class="fc-kpi-value" style="color:${loss>0?'#EF4444':'#10B981'};font-size:${loss>0?'17':'24'}px">
+            ${loss > 0 ? _fmtRp(loss) : t('fcNoLoss')}
           </div>
         </div>
       </div>
-      ${fcSep}
+      ${soSection}
       <div class="fc-sep"></div>
       <div class="fc-summary">
         <div class="fc-sum-label">${t('fcSummary')}</div>
@@ -992,7 +1241,36 @@ function renderForecastPanel(fc) {
     </div>`;
 }
 
-/* ── Inventory horizontal bar chart ─────────────────────────── */
+function renderOvForecast(fc) {
+  const down  = fc.revenue_trend_7d === 'declining';
+  const up    = fc.revenue_trend_7d === 'growing';
+  const arrow = down ? '↓' : up ? '↑' : '→';
+  const tCol  = down ? '#EF4444' : up ? '#10B981' : '#6B7280';
+  const rCol  = _runwayHex(fc.cash_runway_days);
+  const pct   = fc.revenue_trend_pct;
+
+  document.getElementById('ovFcBody').innerHTML = `
+    <div class="ov-fc-kpi">
+      <div class="ov-fc-label">${t('fcCash')}</div>
+      <div class="ov-fc-value" style="color:${rCol}">${fc.cash_runway_days.toFixed(1)}</div>
+      <div class="ov-fc-unit">${t('fcDays')}</div>
+    </div>
+    <div class="ov-fc-sep"></div>
+    <div class="ov-fc-kpi">
+      <div class="ov-fc-label">${t('fcTrend')}</div>
+      <div class="ov-fc-value" style="color:${tCol};font-size:20px">${arrow} ${(pct>0?'+':'')+pct}%</div>
+      <div class="ov-fc-unit">${t('fcVsPrior')}</div>
+    </div>
+    <div class="ov-fc-sep"></div>
+    <div class="ov-fc-summary">
+      <div class="ov-fc-label">${t('fcSummary')}</div>
+      <div class="ov-fc-sum-text">${esc(fc.summary)}</div>
+    </div>`;
+}
+
+/* ═══════════════════════════════════════════════
+   Stock horizontal bar (Analytics view)
+═══════════════════════════════════════════════ */
 function renderStockChart(items) {
   const valid  = items.filter(i => i.days_remaining !== null);
   const labels = valid.map(i => i.item);
@@ -1000,129 +1278,85 @@ function renderStockChart(items) {
   const colors = data.map(d => d < 2 ? '#EF4444' : d < 5 ? '#F59E0B' : '#10B981');
 
   if (stockChart) { stockChart.destroy(); stockChart = null; }
-
   const ctx = document.getElementById('stockCanvas').getContext('2d');
   stockChart = new Chart(ctx, {
     type: 'bar',
-    data: {
-      labels,
-      datasets: [{
-        data,
-        backgroundColor: colors,
-        borderRadius: 5,
-        borderSkipped: false,
-      }],
-    },
+    data: { labels, datasets: [{ data, backgroundColor:colors, borderRadius:5, borderSkipped:false }] },
     options: {
-      indexAxis: 'y',
-      responsive: true,
-      maintainAspectRatio: false,
+      indexAxis: 'y', responsive: true, maintainAspectRatio: false,
       plugins: {
-        legend: { display: false },
-        tooltip: {
-          callbacks: {
-            label: ctx => `${ctx.raw} ${t('fcDays')}`,
-          },
-        },
+        legend: { display:false },
+        tooltip: { callbacks: { label: ctx => `${ctx.raw} ${t('fcDays')}` } },
       },
       scales: {
         x: {
-          min: 0,
-          max: Math.max(10, ...data) + 2,
-          ticks: {
-            font: { size: 10 }, color: '#9CA3AF',
-            callback: v => `${v}${t('daysSuffix')}`,
-          },
-          grid:  { color: 'rgba(0,0,0,0.04)' },
-          border: { display: false },
+          min: 0, max: Math.max(10, ...data) + 2,
+          ticks: { callback: v => `${v}${t('daysSuffix')}`, font:{size:10}, color:'#9CA3AF' },
+          grid: { color:'rgba(0,0,0,0.04)' }, border: { display:false },
         },
-        y: {
-          ticks: { font: { size: 11 }, color: '#374151' },
-          grid:  { display: false },
-          border: { display: false },
-        },
+        y: { ticks:{font:{size:11},color:'#374151'}, grid:{display:false}, border:{display:false} },
       },
     },
   });
-
-  setBadge('badgeStock', `${valid.length} item`);
+  _setBadge('badgeStockAn', `${valid.length} item`);
 }
 
-/* ── Product margin vertical bar chart ──────────────────────── */
+/* ═══════════════════════════════════════════════
+   Margin vertical bar (Analytics view)
+═══════════════════════════════════════════════ */
 function renderMarginChart(products) {
   const labels = products.map(p => p.name);
   const data   = products.map(p => p.margin_pct);
   const colors = data.map(m => m < 0 ? '#EF4444' : m < 20 ? '#F59E0B' : '#10B981');
 
   if (marginChart) { marginChart.destroy(); marginChart = null; }
-
   const ctx = document.getElementById('marginCanvas').getContext('2d');
   marginChart = new Chart(ctx, {
     type: 'bar',
-    data: {
-      labels,
-      datasets: [{
-        data,
-        backgroundColor: colors,
-        borderRadius: 5,
-        borderSkipped: false,
-      }],
-    },
+    data: { labels, datasets: [{ data, backgroundColor:colors, borderRadius:5, borderSkipped:false }] },
     options: {
-      responsive: true,
-      maintainAspectRatio: false,
+      responsive: true, maintainAspectRatio: false,
       plugins: {
-        legend: { display: false },
-        tooltip: {
-          callbacks: {
-            label: ctx => `${ctx.raw.toFixed(1)}%`,
-          },
-        },
+        legend: { display:false },
+        tooltip: { callbacks: { label: ctx => `${ctx.raw.toFixed(1)}%` } },
       },
       scales: {
-        x: {
-          ticks: { font: { size: 10 }, color: '#374151' },
-          grid:  { display: false },
-          border: { display: false },
-        },
-        y: {
-          ticks: { callback: v => `${v}%`, font: { size: 10 }, color: '#9CA3AF' },
-          grid:  { color: 'rgba(0,0,0,0.04)' },
-          border: { display: false },
-        },
+        x: { ticks:{font:{size:10},color:'#374151'}, grid:{display:false}, border:{display:false} },
+        y: { ticks:{callback:v=>`${v}%`,font:{size:10},color:'#9CA3AF'}, grid:{color:'rgba(0,0,0,0.04)'}, border:{display:false} },
       },
     },
   });
-
-  setBadge('badgeMargin', `${products.length} produk`);
+  _setBadge('badgeMarginAn', `${products.length} produk`);
 }
 
-/* ── /proactive → Alerts panel ──────────────────────────────── */
+/* ═══════════════════════════════════════════════
+   /proactive → Alerts view
+═══════════════════════════════════════════════ */
 async function loadAlerts() {
   const body = document.getElementById('alertsBody');
   try {
     const d = await (await fetch(`/proactive/${uid}`)).json();
     const alerts = d.alerts || [];
     body.innerHTML = alerts.length
-      ? alerts.map(renderAlert).join('')
+      ? alerts.map(_renderAlert).join('')
       : `<div class="empty-state">${esc(t('noAlerts'))}</div>`;
   } catch (_) {
     body.innerHTML = `<div class="empty-state" style="color:var(--red)">${esc(t('errMsg'))}</div>`;
   }
 }
 
-function renderAlert(a) {
+function _renderAlert(a) {
   const ico  = { critical:'🔴', high:'🟠', medium:'🟡' }[a.severity] || '⚪';
   const az   = a.analysis || {};
   const why  = az.why_it_matters || '';
-  const next = az.next_step      || '';
+  const next = az.next_step || '';
   return `
-    <div class="alert-card ${esc(a.severity)}">
+    <div class="alert-card ${esc(a.severity || '')}">
       <div class="alert-hd">
         <span>${ico}</span>
-        <span class="alert-cat">${esc((a.category||'').toUpperCase())}</span>
-        <span class="alert-item">${esc(a.item||'')}</span>
-        <span class="alert-score">score ${a.severity_score}</span>
+        <span class="alert-cat">${esc((a.category || '').toUpperCase())}</span>
+        <span class="alert-item">${esc(a.item || '')}</span>
+        <span class="alert-score">score ${esc(String(a.severity_score || ''))}</span>
       </div>
       <div class="alert-bd">
         ${why  ? `<div class="sec-label">${t('whyLabel')}</div>
@@ -1132,31 +1366,32 @@ function renderAlert(a) {
     </div>`;
 }
 
-/* ── Chat ────────────────────────────────────────────────────── */
+/* ═══════════════════════════════════════════════
+   CHAT
+═══════════════════════════════════════════════ */
 async function sendChat() {
   const inp = document.getElementById('chatInput');
   const msg = inp.value.trim();
   if (!msg) return;
   inp.value = ''; autoGrow(inp);
-  removeEl('chatEmpty');
-  addMsg('user', msg);
+  _removeEl('chatEmpty');
+  _addMsg('user', msg);
   const btn = document.getElementById('sendBtn');
   btn.disabled = true;
-  const tid = addTyping();
+  const tid = _addTyping();
   try {
     const r = await fetch('/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ user_id: uid, message: msg, language: lang }),
     });
-    removeEl(tid);
-    addMsg('kira', r.ok ? (await r.json()).response : t('errMsg'));
+    _removeEl(tid);
+    _addMsg('kira', r.ok ? (await r.json()).response : t('errMsg'));
   } catch (_) {
-    removeEl(tid);
-    addMsg('kira', t('errMsg'));
+    _removeEl(tid);
+    _addMsg('kira', t('errMsg'));
   } finally {
     btn.disabled = false;
-    inp.focus();
   }
 }
 
@@ -1168,35 +1403,33 @@ function autoGrow(el) {
   el.style.height = Math.min(el.scrollHeight, 110) + 'px';
 }
 
-/* ── Receipt scan ────────────────────────────────────────────── */
+/* Receipt scan */
 function pickReceipt() { document.getElementById('fileInput').click(); }
 
 async function onReceiptFile(input) {
-  const file = input.files[0];
-  if (!file) return;
+  const file = input.files[0]; if (!file) return;
   input.value = '';
-  removeEl('chatEmpty');
-  addMsg('user', `📷 ${file.name}`);
-  const tid = addTyping();
+  _removeEl('chatEmpty');
+  _addMsg('user', `📷 ${file.name}`);
+  const tid = _addTyping();
   try {
-    const fd = new FormData();
-    fd.append('file', file);
-    const r = await fetch('/scan-receipt', { method: 'POST', body: fd });
-    removeEl(tid);
+    const fd = new FormData(); fd.append('file', file);
+    const r  = await fetch('/scan-receipt', { method:'POST', body:fd });
+    _removeEl(tid);
     if (!r.ok) throw new Error();
-    addReceiptCard(await r.json());
+    _addReceiptCard(await r.json());
   } catch (_) {
-    removeEl(tid);
-    addMsg('kira', t('errMsg'));
+    _removeEl(tid);
+    _addMsg('kira', t('errMsg'));
   }
 }
 
-function addReceiptCard(d) {
+function _addReceiptCard(d) {
   const tier = d.tier_used === 'local' ? t('tierLocal') : t('tierCloud');
   const conf = (d.confidence || 0).toFixed(1);
   const rows = (d.items || []).map(it => {
     const sub = it.quantity * it.unit_price;
-    return `<div class="receipt-row"><span>${esc(it.name||'')} × ${it.quantity}</span><span>${formatRp(sub)}</span></div>`;
+    return `<div class="receipt-row"><span>${esc(it.name||'')} × ${it.quantity}</span><span>${_fmtRp(sub)}</span></div>`;
   }).join('') || '<em style="color:#94A3B8">—</em>';
   const cid = 'rc-' + Date.now();
   const html = `
@@ -1204,7 +1437,7 @@ function addReceiptCard(d) {
       <div class="receipt-title">📄 ${t('rcptTitle')}</div>
       <div class="receipt-meta">${tier} · ${t('confidence')}: ${conf}%</div>
       <div class="receipt-rows">${rows}</div>
-      <div class="receipt-total"><span>${t('total')}</span><span>${formatRp(d.total||0)}</span></div>
+      <div class="receipt-total"><span>${t('total')}</span><span>${_fmtRp(d.total||0)}</span></div>
       <div class="receipt-prompt">${t('rcptPrompt')}</div>
       <div class="receipt-btns" id="${cid}">
         <button class="btn btn-confirm btn-sm" onclick="rcptAction('${cid}',true)">${t('rcptYes')}</button>
@@ -1215,8 +1448,7 @@ function addReceiptCard(d) {
   const wrap = document.createElement('div');
   wrap.className = 'msg kira';
   wrap.innerHTML = `<div class="msg-sender">${esc(t('kira'))}</div>${html}`;
-  body.appendChild(wrap);
-  body.scrollTop = body.scrollHeight;
+  body.appendChild(wrap); body.scrollTop = body.scrollHeight;
 }
 
 function rcptAction(id, yes) {
@@ -1225,49 +1457,45 @@ function rcptAction(id, yes) {
     `<em style="color:${yes?'#059669':'#9CA3AF'}">${yes ? t('rcptDone') : t('rcptSkip')}</em>`;
 }
 
-/* ── Chat DOM helpers ────────────────────────────────────────── */
-function addMsg(role, text) {
+/* Chat DOM helpers */
+function _addMsg(role, text) {
   const body = document.getElementById('chatBody');
   const el = document.createElement('div');
   el.className = `msg ${role}`;
-  const sender = role === 'user' ? t('you') : t('kira');
-  el.innerHTML = `<div class="msg-sender">${esc(sender)}</div>
+  el.innerHTML = `<div class="msg-sender">${esc(role==='user'?t('you'):t('kira'))}</div>
     <div class="msg-bubble">${esc(text)}</div>`;
-  body.appendChild(el);
-  body.scrollTop = body.scrollHeight;
+  body.appendChild(el); body.scrollTop = body.scrollHeight;
 }
 
-function addTyping() {
+function _addTyping() {
   const body = document.getElementById('chatBody');
   const id   = 'ty-' + Date.now();
   const el   = document.createElement('div');
   el.className = 'msg kira'; el.id = id;
   el.innerHTML = `<div class="msg-sender">${esc(t('kira'))}</div>
-    <div class="msg-bubble">
-      <div class="typing-dots"><span></span><span></span><span></span></div>
-    </div>`;
-  body.appendChild(el);
-  body.scrollTop = body.scrollHeight;
+    <div class="msg-bubble"><div class="typing-dots"><span></span><span></span><span></span></div></div>`;
+  body.appendChild(el); body.scrollTop = body.scrollHeight;
   return id;
 }
 
-function removeEl(id) { const e = document.getElementById(id); if (e) e.remove(); }
+function _removeEl(id) { const e = document.getElementById(id); if (e) e.remove(); }
 
-/* ── AMD modal ───────────────────────────────────────────────── */
+/* ═══════════════════════════════════════════════
+   AMD MODAL
+═══════════════════════════════════════════════ */
 function openAmd()  { document.getElementById('amdOverlay').classList.add('open'); }
 function closeAmd() { document.getElementById('amdOverlay').classList.remove('open'); }
 function overlayClick(e) { if (e.target === document.getElementById('amdOverlay')) closeAmd(); }
 
-/* ── Utilities ───────────────────────────────────────────────── */
-function setBadge(id, text) {
-  const el = document.getElementById(id);
-  if (el) el.textContent = text;
-}
+/* ═══════════════════════════════════════════════
+   UTILITIES
+═══════════════════════════════════════════════ */
+function _setBadge(id, text) { const el = document.getElementById(id); if (el) el.textContent = text; }
 
-function formatRp(n) {
-  if (n === null || n === undefined) return '—';
+function _fmtRp(n) {
+  if (n == null) return '—';
   const neg = n < 0;
-  return (neg ? '-' : '') + 'Rp ' + Math.abs(Math.round(n)).toLocaleString('id-ID');
+  return (neg ? '-' : '') + 'Rp ' + Math.abs(Math.round(n)).toLocaleString('id-ID');
 }
 
 function esc(s) {
