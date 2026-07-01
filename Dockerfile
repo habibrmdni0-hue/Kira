@@ -32,5 +32,3 @@ EXPOSE 8000
 # Healthcheck sederhana — supaya sistem scoring panitia tahu container hidup
 HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
     CMD python -c "import sys; sys.exit(0)"
-
-CMD uvicorn api.server:app --host 0.0.0.0 --port $PORT
