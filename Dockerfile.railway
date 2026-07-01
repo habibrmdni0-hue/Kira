@@ -2,9 +2,21 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-RUN pip install fastapi uvicorn
+# Group 1: Core web server (confirmed working)
+RUN pip install fastapi uvicorn python-multipart
 
-COPY api/server_minimal.py ./api/server_minimal.py
-COPY api/__init__.py ./api/__init__.py
+# Group 2: Firebase (needed for data layer)
+RUN pip install firebase-admin
 
-CMD ["python", "api/server_minimal.py"]
+# Group 3: LangChain (needed for orchestrator)
+RUN pip install langchain langchain-openai langgraph openai
+
+# Group 4: Computer vision (needed for eyes_agent)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libgl1 libglib2.0-0 tesseract-ocr \
+    && rm -rf /var/lib/apt/lists/*
+RUN pip install opencv-python-headless pytesseract Pillow
+
+COPY . .
+
+CMD ["python", "api/entrypoint.py"]

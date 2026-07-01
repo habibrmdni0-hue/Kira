@@ -1,1 +1,1 @@
-web: python api/server_minimal.py
+web: python api/entrypoint.py

@@ -14,5 +14,5 @@ def health():
     return {"status": "ok", "port": os.environ.get("PORT", "not set")}
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 8000))
+    port = int(os.environ.get("PORT", 8080))
     uvicorn.run(app, host="0.0.0.0", port=port)
