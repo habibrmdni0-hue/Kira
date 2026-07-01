@@ -21,7 +21,9 @@ After seeding, run `python -X utf8 main.py` to verify that Demo 9 shows
 genuinely different data for each user_id.
 """
 import os
+import random as _random
 import sys
+from datetime import date as _date, timedelta as _td
 
 # Allow running from project root without installing as a package
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -49,6 +51,29 @@ except ImportError:
     print("ERROR: firebase-admin is not installed.")
     print("  Install it:  pip install firebase-admin")
     sys.exit(1)
+
+# ── Sales-history generator ────────────────────────────────────
+# Keep in sync with data/firestore_client.generate_sales_history().
+# Pure stdlib so this script stays self-contained.
+
+_HISTORY_REF_DATE = _date(2026, 7, 1)
+
+
+def _gen_history(base_revenue, trend_per_day, weekend_mult, base_tx, seed):
+    rng   = _random.Random(seed)
+    start = _HISTORY_REF_DATE - _td(days=29)
+    rows  = []
+    for i in range(30):
+        d              = start + _td(days=i)
+        trend_factor   = 1.0 + trend_per_day * i
+        weekend_factor = weekend_mult if d.weekday() >= 5 else 1.0
+        noise_rev      = 1.0 + rng.uniform(-0.08, 0.08)
+        noise_tx       = 1.0 + rng.uniform(-0.12, 0.12)
+        rev = max(0, round(base_revenue * trend_factor * weekend_factor * noise_rev / 1000) * 1000)
+        tx  = max(5, round(base_tx * trend_factor * weekend_factor * noise_tx))
+        rows.append({"date": d.isoformat(), "revenue": rev, "transactions": tx})
+    return rows
+
 
 # ── Connect ────────────────────────────────────────────────────
 cred = credentials.Certificate(CREDS_PATH)
@@ -78,6 +103,8 @@ BUSINESSES = {
             {"name": "Nasi Bungkus", "revenue_7d": 840_000, "cost_7d": 588_000, "units_sold_7d": 140},
             {"name": "Rokok Eceran", "revenue_7d": 210_000, "cost_7d": 189_000, "units_sold_7d": 70},
         ],
+        # ~400k/day, downward trend. seed=42
+        "sales_history": _gen_history(420_000, -0.005, 1.20, 45, seed=42),
     },
 
     # ── user_002: Toko Pak Budi ────────────────────────────────
@@ -99,6 +126,8 @@ BUSINESSES = {
             {"name": "Drinks",         "revenue_7d": 420_000, "cost_7d": 105_000, "units_sold_7d": 300},
             {"name": "Packaged Goods", "revenue_7d": 315_000, "cost_7d": 294_000, "units_sold_7d": 90},
         ],
+        # ~245k/day, flat. seed=43
+        "sales_history": _gen_history(245_000, 0.0, 1.15, 30, seed=43),
     },
 
     # ── user_003: Kedai Kang Asep ──────────────────────────────
@@ -124,6 +153,8 @@ BUSINESSES = {
             {"name": "Es Teh",     "revenue_7d":   350_000, "cost_7d":  70_000, "units_sold_7d": 250},
             {"name": "Gorengan",   "revenue_7d":    80_000, "cost_7d":  96_000, "units_sold_7d": 40},
         ],
+        # ~330k/day avg, upward trend. seed=44
+        "sales_history": _gen_history(280_000, 0.012, 1.25, 35, seed=44),
     },
 }
 
@@ -136,6 +167,7 @@ for user_id, data in BUSINESSES.items():
     doc_ref.set(data)
     n_inv  = len(data["inventory"])
     n_prod = len(data["products"])
-    print(f"  ✓  {user_id}  |  {data['business_name']}  |  {n_inv} inventory items, {n_prod} products")
+    n_hist = len(data.get("sales_history", []))
+    print(f"  ✓  {user_id}  |  {data['business_name']}  |  {n_inv} inventory, {n_prod} products, {n_hist} days history")
 
 print(f"\nDone. Run `python -X utf8 main.py` to verify per-user differentiation (Demo 9).\n")

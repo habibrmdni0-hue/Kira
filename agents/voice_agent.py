@@ -314,7 +314,7 @@ def _mock_synthesize(user_query: str, context: Dict[str, Any], language: str) ->
             sentences = re.split(r'(?<=[.!?])\s+', clean)[:2]
             parts.append(" ".join(sentences))
 
-    # ── Nothing at all — pure greeting or unknown ───────────────
+    # ── Nothing at all — pure greeting or no keyword match ────────
     if not parts:
         if any(w in user_query.lower() for w in ("halo", "hai", "hello", "hi", "help")):
             if is_id:
@@ -328,12 +328,20 @@ def _mock_synthesize(user_query: str, context: Dict[str, Any], language: str) ->
                     "read receipts, and give business advice. Where would you like to start?"
                 )
         else:
+            # No specialist data was returned — be honest rather than
+            # implying Kira checked something when she received nothing.
             if is_id:
                 parts.append(
-                    "Oke, sudah saya cek. Semuanya terlihat aman untuk saat ini."
+                    "Bisa ceritakan lebih spesifik? "
+                    "Misalnya: tanya soal stok, lihat laporan laba rugi, "
+                    "cek produk yang paling untung atau rugi, atau minta saya baca nota belanja."
                 )
             else:
-                parts.append("Got it — I've had a look and everything seems fine right now.")
+                parts.append(
+                    "Could you be more specific? "
+                    "For example: ask about stock levels, today's profit and loss, "
+                    "which products are losing money, or have me read a receipt."
+                )
 
     return " ".join(parts)
 

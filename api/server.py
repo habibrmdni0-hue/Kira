@@ -30,7 +30,12 @@ try:
 
     from agents import AgentRequest, BookkeeperAgent, EyesAgent
     from config.settings import settings
-    from data.firestore_client import firestore_status, get_business_state
+    from data.firestore_client import (
+        firestore_status,
+        get_business_state,
+        get_daily_sales_timeseries,
+    )
+    from data.forecast import forecast_business
     from orchestrator import KiraOrchestrator, KiraRequest, run_proactive_check
 
 except Exception as _import_err:
@@ -39,9 +44,14 @@ except Exception as _import_err:
     sys.exit(1)
 
 # ── Singletons (built once at startup, reused per request) ──────
-_orchestrator = KiraOrchestrator()
-_eyes         = EyesAgent()
-_bookkeeper   = BookkeeperAgent()
+try:
+    _orchestrator = KiraOrchestrator()
+    _eyes         = EyesAgent()
+    _bookkeeper   = BookkeeperAgent()
+except Exception as _init_err:
+    print(f"STARTUP ERROR (singleton init): {_init_err}", flush=True)
+    traceback.print_exc()
+    sys.exit(1)
 
 # ── App ─────────────────────────────────────────────────────────
 app = FastAPI(title="Kira API", version="1.0.0")
@@ -156,6 +166,8 @@ def business(user_id: str) -> Dict[str, Any]:
     fin = _bookkeeper.handle(bk_req).result.get("financials", {})
 
     inventory = state.get("inventory", [])
+    sales_7d  = state.get("recent_sales_7d", [])
+
     critical_stock = sum(
         1 for item in inventory
         if item["daily_usage"] > 0
@@ -163,13 +175,37 @@ def business(user_id: str) -> Dict[str, Any]:
     )
 
     losing = sum(
-        1 for sale in state.get("recent_sales_7d", [])
+        1 for sale in sales_7d
         if sale["revenue"] > 0
         and (sale["revenue"] - sale["cost"]) / sale["revenue"] < 0
     )
 
+    # Full per-item inventory with days_remaining (for inventory bar chart)
+    inventory_items = [
+        {
+            "item":           item["item"],
+            "unit":           item["unit"],
+            "days_remaining": round(item["stock"] / item["daily_usage"], 1)
+                              if item["daily_usage"] > 0 else None,
+        }
+        for item in inventory
+    ]
+
+    # Per-product gross margin breakdown (for margin bar chart)
+    product_margins = [
+        {
+            "name":       sale["item"],
+            "revenue_7d": sale["revenue"],
+            "cost_7d":    sale["cost"],
+            "margin_pct": round((sale["revenue"] - sale["cost"]) / sale["revenue"] * 100, 1)
+                         if sale["revenue"] > 0 else 0.0,
+        }
+        for sale in sales_7d
+    ]
+
     return {
         "business_name":        state["business_name"],
+        "language":             state.get("language", "id"),
         "cash_balance":         state["cash_balance"],
         "avg_daily_sales":      state["avg_daily_sales"],
         "inventory_count":      len(inventory),
@@ -177,6 +213,34 @@ def business(user_id: str) -> Dict[str, Any]:
         "losing_product_count": losing,
         "net_profit":           fin.get("net_profit", 0),
         "gross_margin_pct":     fin.get("gross_margin_pct", 0.0),
+        "inventory_items":      inventory_items,
+        "product_margins":      product_margins,
+    }
+
+
+# ── GET /forecast/{user_id} ─────────────────────────────────────
+
+@app.get("/forecast/{user_id}")
+def forecast(user_id: str) -> Dict[str, Any]:
+    result = forecast_business(user_id)
+    if not result:
+        raise HTTPException(status_code=404, detail=f"No data for {user_id!r}")
+    return result
+
+
+# ── GET /sales-history/{user_id} ─────────────────────────────────
+
+@app.get("/sales-history/{user_id}")
+def sales_history(user_id: str) -> Dict[str, Any]:
+    state   = get_business_state(user_id)
+    if not state:
+        raise HTTPException(status_code=404, detail=f"No data for {user_id!r}")
+    history = get_daily_sales_timeseries(user_id)
+    return {
+        "user_id":       user_id,
+        "business_name": state["business_name"],
+        "days":          len(history),
+        "history":       history,
     }
 
 
@@ -192,5 +256,5 @@ def health() -> Dict[str, Any]:
 
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 8000))
+    port = int(os.environ.get("PORT", 8080))
     uvicorn.run(app, host="0.0.0.0", port=port)

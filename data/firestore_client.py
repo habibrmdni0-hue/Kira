@@ -32,9 +32,58 @@ from __future__ import annotations
 
 import json
 import os
+import random as _random
+from datetime import date as _date, timedelta as _td
 from typing import Any, Dict, List, Optional
 
 from config.settings import settings
+
+
+# ──────────────────────────────────────────────────────────────
+# Sales-history generator — used both here (LOCAL_FALLBACK) and
+# in seed_firestore.py.  Pure stdlib, no project imports needed.
+# Fixed reference date (2026-07-01) + fixed per-business seed
+# ensures identical output on every run.
+# ──────────────────────────────────────────────────────────────
+
+_HISTORY_REF_DATE = _date(2026, 7, 1)   # today in the demo world
+
+
+def generate_sales_history(
+    base_revenue: int,
+    trend_per_day: float,
+    weekend_multiplier: float,
+    base_transactions: int,
+    seed: int = 42,
+) -> List[Dict[str, Any]]:
+    """
+    Return 30 daily sales entries ending on _HISTORY_REF_DATE.
+
+    Args:
+        base_revenue:        Day-0 target revenue (Rp)
+        trend_per_day:       Linear multiplicative drift per day
+                             (-0.005 = ≈5% decline over 30 days)
+        weekend_multiplier:  Revenue boost on Sat/Sun (e.g. 1.20)
+        base_transactions:   Day-0 transaction count
+        seed:                RNG seed — different per business
+    """
+    rng   = _random.Random(seed)
+    start = _HISTORY_REF_DATE - _td(days=29)   # 30 entries: start … ref
+
+    result: List[Dict[str, Any]] = []
+    for i in range(30):
+        d              = start + _td(days=i)
+        trend_factor   = 1.0 + trend_per_day * i
+        weekend_factor = weekend_multiplier if d.weekday() >= 5 else 1.0
+        noise_rev      = 1.0 + rng.uniform(-0.08, 0.08)
+        noise_tx       = 1.0 + rng.uniform(-0.12, 0.12)
+
+        rev = max(0, round(base_revenue * trend_factor * weekend_factor * noise_rev / 1000) * 1000)
+        tx  = max(5, round(base_transactions * trend_factor * weekend_factor * noise_tx))
+
+        result.append({"date": d.isoformat(), "revenue": rev, "transactions": tx})
+
+    return result
 
 
 # ──────────────────────────────────────────────────────────────
@@ -64,6 +113,8 @@ _LOCAL_FALLBACK: Dict[str, Dict[str, Any]] = {
             {"name": "Nasi Bungkus", "revenue_7d": 840_000, "cost_7d": 588_000, "units_sold_7d": 140},
             {"name": "Rokok Eceran", "revenue_7d": 210_000, "cost_7d": 189_000, "units_sold_7d": 70},
         ],
+        # ~400k/day, downward trend (explains the cash problem). seed=42
+        "sales_history": generate_sales_history(420_000, -0.005, 1.20, 45, seed=42),
     },
 
     # ── user_002: Toko Pak Budi ────────────────────────────────
@@ -85,6 +136,8 @@ _LOCAL_FALLBACK: Dict[str, Dict[str, Any]] = {
             {"name": "Drinks",         "revenue_7d": 420_000, "cost_7d": 105_000, "units_sold_7d": 300},
             {"name": "Packaged Goods", "revenue_7d": 315_000, "cost_7d": 294_000, "units_sold_7d": 90},
         ],
+        # ~245k/day, flat. seed=43
+        "sales_history": generate_sales_history(245_000, 0.0, 1.15, 30, seed=43),
     },
 
     # ── user_003: Kedai Kang Asep ──────────────────────────────
@@ -110,6 +163,8 @@ _LOCAL_FALLBACK: Dict[str, Dict[str, Any]] = {
             {"name": "Es Teh",     "revenue_7d":   350_000, "cost_7d":  70_000, "units_sold_7d": 250},
             {"name": "Gorengan",   "revenue_7d":    80_000, "cost_7d":  96_000, "units_sold_7d": 40},
         ],
+        # ~330k/day avg, upward trend. seed=44
+        "sales_history": generate_sales_history(280_000, 0.012, 1.25, 35, seed=44),
     },
 }
 
@@ -238,7 +293,8 @@ def _transform(raw: Dict[str, Any], user_id: str) -> Dict[str, Any]:
         "daily_operating_expenses": raw.get("daily_operating_expenses", 0),
         "inventory":                inventory,
         "recent_sales_7d":          recent_sales_7d,
-        "_products_raw":            raw.get("products", []),  # for get_sales_history
+        "_products_raw":            raw.get("products", []),        # for get_sales_history
+        "sales_history":            raw.get("sales_history", []),   # daily time-series
     }
 
 
@@ -299,3 +355,15 @@ def get_sales_history(user_id: str, days: int = 7) -> List[Dict[str, Any]]:
         }
         for p in state.get("_products_raw", [])
     ]
+
+
+def get_daily_sales_timeseries(user_id: str) -> List[Dict[str, Any]]:
+    """
+    30-day daily revenue time series for user_id, suitable for charting.
+
+    Each entry: {"date": "YYYY-MM-DD", "revenue": int, "transactions": int}
+
+    Returns [] if user_id is not found or has no sales_history yet.
+    """
+    state = get_business_state(user_id)
+    return state.get("sales_history", []) if state else []
