@@ -1,0 +1,889 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kira — AI Business Assistant</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #EFF3F8;
+      color: #1E293B;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* ── Header ─────────────────────────────────────────── */
+    .header {
+      background: #1B2E4B;
+      color: #fff;
+      padding: 10px 24px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      flex-shrink: 0;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .logo {
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      white-space: nowrap;
+    }
+    .logo em { color: #60A5FA; font-style: normal; }
+
+    .biz-info {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      background: rgba(255,255,255,0.08);
+      border-radius: 20px;
+      padding: 4px 12px;
+    }
+    .biz-dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: #22C55E;
+      box-shadow: 0 0 5px #22C55E;
+      flex-shrink: 0;
+    }
+    .biz-name {
+      font-size: 13px;
+      font-weight: 500;
+      white-space: nowrap;
+    }
+
+    .spacer { flex: 1; }
+
+    .amd-badge {
+      background: #00A86B;
+      color: #fff;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 5px 11px;
+      border-radius: 5px;
+      cursor: pointer;
+      letter-spacing: 0.4px;
+      border: none;
+      white-space: nowrap;
+      transition: opacity 0.15s;
+    }
+    .amd-badge:hover { opacity: 0.85; }
+
+    .lang-toggle {
+      display: flex;
+      background: rgba(255,255,255,0.12);
+      border-radius: 6px;
+      overflow: hidden;
+    }
+    .lang-btn {
+      padding: 5px 13px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      color: rgba(255,255,255,0.6);
+      border: none;
+      background: transparent;
+      transition: all 0.15s;
+    }
+    .lang-btn.active {
+      background: rgba(255,255,255,0.22);
+      color: #fff;
+    }
+
+    /* ── Metric cards ────────────────────────────────────── */
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      padding: 12px 24px;
+      flex-shrink: 0;
+    }
+
+    .card {
+      background: #fff;
+      border-radius: 10px;
+      padding: 13px 16px;
+      border-left: 4px solid #E2E8F0;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+      transition: border-color 0.2s;
+    }
+    .card.ok     { border-color: #22C55E; }
+    .card.warn   { border-color: #EAB308; }
+    .card.danger { border-color: #EF4444; }
+
+    .card-label {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: #64748B;
+      margin-bottom: 5px;
+    }
+    .card-value {
+      font-size: 20px;
+      font-weight: 700;
+      color: #1E293B;
+      transition: color 0.2s;
+    }
+    .card-value.ok     { color: #16A34A; }
+    .card-value.warn   { color: #B45309; }
+    .card-value.danger { color: #DC2626; }
+
+    /* ── Main two-panel layout ───────────────────────────── */
+    .main {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      padding: 0 24px;
+      flex: 1;
+      min-height: 0;
+    }
+
+    .panel {
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .panel-header {
+      padding: 11px 16px;
+      border-bottom: 1px solid #F1F5F9;
+      font-weight: 600;
+      font-size: 13px;
+      color: #374151;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+
+    /* ── Chat ────────────────────────────────────────────── */
+    .chat-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .msg {
+      display: flex;
+      flex-direction: column;
+      max-width: 82%;
+    }
+    .msg.user  { align-self: flex-end;  align-items: flex-end; }
+    .msg.kira  { align-self: flex-start; align-items: flex-start; }
+
+    .msg-sender {
+      font-size: 11px;
+      color: #94A3B8;
+      margin-bottom: 3px;
+      padding: 0 4px;
+    }
+    .msg-bubble {
+      padding: 9px 13px;
+      border-radius: 12px;
+      font-size: 13px;
+      line-height: 1.55;
+      white-space: pre-wrap;
+    }
+    .msg.user .msg-bubble {
+      background: #2563EB;
+      color: #fff;
+      border-bottom-right-radius: 4px;
+    }
+    .msg.kira .msg-bubble {
+      background: #F1F5F9;
+      color: #1E293B;
+      border-bottom-left-radius: 4px;
+    }
+
+    /* Receipt card */
+    .receipt-card {
+      background: #fff;
+      border: 1px solid #E2E8F0;
+      border-radius: 8px;
+      padding: 12px 14px;
+      font-size: 13px;
+      min-width: 230px;
+      max-width: 300px;
+    }
+    .receipt-title  { font-weight: 700; margin-bottom: 4px; color: #1E293B; }
+    .receipt-meta   { font-size: 11px; color: #64748B; margin-bottom: 10px; }
+    .receipt-rows   { border-top: 1px solid #F1F5F9; border-bottom: 1px solid #F1F5F9; padding: 8px 0; margin-bottom: 8px; }
+    .receipt-row    { display: flex; justify-content: space-between; padding: 2px 0; color: #374151; }
+    .receipt-total  { font-weight: 700; display: flex; justify-content: space-between; }
+    .receipt-prompt { font-size: 12px; color: #475569; margin-top: 10px; }
+    .receipt-btns   { display: flex; gap: 8px; margin-top: 8px; }
+
+    /* Typing indicator */
+    .typing-dots {
+      display: inline-flex;
+      gap: 4px;
+      align-items: center;
+      padding: 2px 2px;
+    }
+    .typing-dots span {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: #94A3B8;
+      animation: bounce 1.2s infinite;
+    }
+    .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+    .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes bounce {
+      0%,60%,100% { transform: translateY(0); }
+      30%          { transform: translateY(-5px); }
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 32px 16px;
+      color: #94A3B8;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    /* Chat input */
+    .chat-input-area {
+      padding: 10px 14px;
+      border-top: 1px solid #F1F5F9;
+      display: flex;
+      gap: 8px;
+      align-items: flex-end;
+      flex-shrink: 0;
+    }
+    .chat-input {
+      flex: 1;
+      border: 1px solid #E2E8F0;
+      border-radius: 8px;
+      padding: 9px 11px;
+      font-size: 13px;
+      resize: none;
+      outline: none;
+      min-height: 38px;
+      max-height: 110px;
+      font-family: inherit;
+      line-height: 1.45;
+      color: #1E293B;
+    }
+    .chat-input:focus { border-color: #2563EB; box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
+
+    /* Buttons */
+    .btn {
+      padding: 8px 15px;
+      border-radius: 7px;
+      border: none;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 600;
+      font-family: inherit;
+      transition: opacity 0.15s;
+      white-space: nowrap;
+    }
+    .btn:hover:not(:disabled) { opacity: 0.82; }
+    .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+    .btn-primary   { background: #2563EB; color: #fff; }
+    .btn-secondary { background: #F1F5F9; color: #374151; }
+    .btn-icon      { background: #F1F5F9; color: #374151; padding: 8px 11px; font-size: 15px; }
+    .btn-sm        { padding: 5px 11px; font-size: 11px; }
+    .btn-confirm   { background: #16A34A; color: #fff; }
+
+    /* ── Alerts panel ────────────────────────────────────── */
+    .alerts-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 9px;
+    }
+
+    .alert-card {
+      border: 1px solid #E2E8F0;
+      border-left-width: 4px;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .alert-card.critical { border-left-color: #EF4444; }
+    .alert-card.high     { border-left-color: #F97316; }
+    .alert-card.medium   { border-left-color: #EAB308; }
+
+    .alert-head {
+      padding: 9px 12px;
+      background: #FAFAFA;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+    .alert-cat  { font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.6px; color: #64748B; }
+    .alert-item { font-size: 13px; font-weight: 600; color: #1E293B; flex: 1; }
+    .alert-score { font-size: 10px; color: #94A3B8; }
+
+    .alert-body {
+      padding: 9px 12px;
+      font-size: 12px;
+      line-height: 1.55;
+    }
+    .section-label {
+      font-size: 9px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: #94A3B8;
+      margin-bottom: 3px;
+    }
+    .section-text  { color: #374151; margin-bottom: 9px; }
+    .next-step {
+      background: #F0FDF4;
+      border-left: 3px solid #22C55E;
+      padding: 7px 10px;
+      border-radius: 0 5px 5px 0;
+      color: #166534;
+      font-size: 12px;
+    }
+
+    /* ── Footer ──────────────────────────────────────────── */
+    .footer {
+      padding: 9px 24px;
+      background: #fff;
+      border-top: 1px solid #E2E8F0;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-shrink: 0;
+    }
+    .footer-label { font-size: 12px; font-weight: 600; color: #64748B; }
+
+    .user-btns { display: flex; gap: 7px; }
+    .user-btn {
+      padding: 5px 14px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      border: 1.5px solid #E2E8F0;
+      background: #fff;
+      color: #475569;
+      transition: all 0.15s;
+      font-family: inherit;
+    }
+    .user-btn.active { border-color: #2563EB; background: #EFF6FF; color: #2563EB; }
+
+    .footer-mode { margin-left: auto; font-size: 11px; color: #94A3B8; }
+
+    /* ── AMD Modal ───────────────────────────────────────── */
+    .overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.45);
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+    }
+    .overlay.open { display: flex; }
+
+    .modal {
+      background: #fff;
+      border-radius: 12px;
+      padding: 24px;
+      max-width: 420px;
+      width: 90%;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+    }
+    .modal h3 { font-size: 16px; margin-bottom: 12px; color: #1E293B; }
+    .modal p  { font-size: 13px; line-height: 1.65; color: #475569; margin-bottom: 10px; }
+    .modal code { background: #F1F5F9; padding: 1px 5px; border-radius: 4px; font-size: 12px; }
+
+    /* ── Scrollbar ───────────────────────────────────────── */
+    ::-webkit-scrollbar       { width: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 2px; }
+  </style>
+</head>
+<body>
+
+<!-- ── Header ──────────────────────────────────────────────── -->
+<header class="header">
+  <div class="logo">Kira<em>AI</em></div>
+  <div class="biz-info">
+    <div class="biz-dot"></div>
+    <span class="biz-name" id="bizName">—</span>
+  </div>
+  <div class="spacer"></div>
+  <button class="amd-badge" onclick="openAmd()">AMD MI300X ▸</button>
+  <div class="lang-toggle">
+    <button class="lang-btn active" id="btnId" onclick="setLang('id')">ID</button>
+    <button class="lang-btn"        id="btnEn" onclick="setLang('en')">EN</button>
+  </div>
+</header>
+
+<!-- ── Metric Cards ─────────────────────────────────────────── -->
+<div class="metrics">
+  <div class="card" id="cardCash">
+    <div class="card-label" id="lbCash">Kas Hari Ini</div>
+    <div class="card-value" id="valCash">—</div>
+  </div>
+  <div class="card" id="cardProfit">
+    <div class="card-label" id="lbProfit">Profit Hari Ini</div>
+    <div class="card-value" id="valProfit">—</div>
+  </div>
+  <div class="card" id="cardStock">
+    <div class="card-label" id="lbStock">Stok Kritis</div>
+    <div class="card-value" id="valStock">—</div>
+  </div>
+  <div class="card" id="cardLosing">
+    <div class="card-label" id="lbLosing">Produk Merugi</div>
+    <div class="card-value" id="valLosing">—</div>
+  </div>
+</div>
+
+<!-- ── Main Panels ──────────────────────────────────────────── -->
+<div class="main">
+
+  <!-- LEFT: Chat -->
+  <div class="panel">
+    <div class="panel-header">
+      <span id="chatTitle">💬 Chat dengan Kira</span>
+    </div>
+    <div class="chat-body" id="chatBody">
+      <div class="empty-state" id="chatEmpty">
+        <span id="chatHint">Tanya Kira tentang stok, keuangan, atau strategi bisnis Anda.</span>
+      </div>
+    </div>
+    <div class="chat-input-area">
+      <textarea class="chat-input" id="chatInput" rows="1"
+        placeholder="Ketik pesan..."
+        onkeydown="onInputKey(event)"
+        oninput="autoGrow(this)"></textarea>
+      <button class="btn btn-icon" title="Scan nota" onclick="pickReceipt()">📷</button>
+      <button class="btn btn-primary" id="sendBtn" onclick="sendChat()">
+        <span id="sendLabel">Kirim</span>
+      </button>
+      <input type="file" id="fileInput" accept="image/*" style="display:none"
+             onchange="onReceiptFile(this)">
+    </div>
+  </div>
+
+  <!-- RIGHT: Proactive Alerts -->
+  <div class="panel">
+    <div class="panel-header">
+      <span id="alertsTitle">🔔 Peringatan Proaktif</span>
+      <button class="btn btn-secondary btn-sm" onclick="loadAlerts()">
+        <span id="refreshLabel">Refresh</span>
+      </button>
+    </div>
+    <div class="alerts-body" id="alertsBody">
+      <div class="empty-state" id="alertsEmpty">
+        <span id="alertsHint">Memuat peringatan...</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ── Footer: Business Selector ───────────────────────────── -->
+<footer class="footer">
+  <span class="footer-label" id="bizLabel">Bisnis:</span>
+  <div class="user-btns">
+    <button class="user-btn active" data-uid="user_001" onclick="switchUser('user_001')">
+      user_001
+    </button>
+    <button class="user-btn" data-uid="user_002" onclick="switchUser('user_002')">
+      user_002
+    </button>
+    <button class="user-btn" data-uid="user_003" onclick="switchUser('user_003')">
+      user_003
+    </button>
+  </div>
+  <span class="footer-mode" id="footerMode">mode: —</span>
+</footer>
+
+<!-- ── AMD Modal ────────────────────────────────────────────── -->
+<div class="overlay" id="amdOverlay" onclick="overlayClick(event)">
+  <div class="modal" id="amdModal">
+    <h3>🖥️ AMD MI300X — Inferensi 70B</h3>
+    <p>
+      Kira menggunakan model bahasa <strong>70 miliar parameter</strong>
+      (Llama-3.1-70B / Qwen2.5-72B) untuk analisis bisnis mendalam.
+      Model ini dijalankan di GPU <strong>AMD MI300X</strong> melalui
+      endpoint vLLM yang kompatibel dengan OpenAI API — tanpa perubahan
+      kode apa pun.
+    </p>
+    <p>
+      <strong>Reasoning Agent</strong> memanggil model 70B ini setiap
+      ada alert bisnis yang butuh analisis: mengapa situasinya terjadi,
+      dampak finansialnya, dan satu langkah konkret untuk pemilik warung.
+    </p>
+    <p>
+      Endpoint dikonfigurasi via <code>REASONING_BASE_URL</code> di
+      environment. Ganti URL ke AMD Developer Cloud atau Fireworks AI —
+      tidak ada perubahan kode yang diperlukan.
+    </p>
+    <button class="btn btn-primary" style="width:100%;margin-top:14px"
+            onclick="closeAmd()">Tutup</button>
+  </div>
+</div>
+
+<script>
+// ── State ─────────────────────────────────────────────────────
+let uid  = 'user_001';
+let lang = 'id';
+
+// ── Translations ──────────────────────────────────────────────
+const T = {
+  id: {
+    chatTitle:   '💬 Chat dengan Kira',
+    chatHint:    'Tanya Kira tentang stok, keuangan, atau strategi bisnis Anda.',
+    alertsTitle: '🔔 Peringatan Proaktif',
+    alertsHint:  'Memuat peringatan...',
+    noAlerts:    'Tidak ada peringatan aktif. Semua aman ✅',
+    bizLabel:    'Bisnis:',
+    refreshLabel:'Refresh',
+    sendLabel:   'Kirim',
+    placeholder: 'Ketik pesan...',
+    you:         'Anda',
+    kira:        'Kira',
+    lbCash:      'Kas Hari Ini',
+    lbProfit:    'Profit Hari Ini',
+    lbStock:     'Stok Kritis',
+    lbLosing:    'Produk Merugi',
+    whyLabel:    'KENAPA INI PENTING',
+    nextLabel:   'LANGKAH SELANJUTNYA',
+    tierLocal:   'Lokal (Tier 1)',
+    tierCloud:   'Cloud — Tier 2',
+    confidence:  'Kepercayaan',
+    rcptTitle:   'Hasil Scan Nota',
+    rcptPrompt:  'Mau saya catat ke buku kas?',
+    rcptYes:     'Ya, catat',
+    rcptNo:      'Tidak',
+    rcptDone:    '✅ Dicatat!',
+    rcptSkip:    'OK, dilewati.',
+    total:       'TOTAL',
+    errMsg:      'Terjadi kesalahan. Coba lagi.',
+  },
+  en: {
+    chatTitle:   '💬 Chat with Kira',
+    chatHint:    'Ask Kira about your stock, finances, or business strategy.',
+    alertsTitle: '🔔 Proactive Alerts',
+    alertsHint:  'Loading alerts...',
+    noAlerts:    'No active alerts. All clear ✅',
+    bizLabel:    'Business:',
+    refreshLabel:'Refresh',
+    sendLabel:   'Send',
+    placeholder: 'Type a message...',
+    you:         'You',
+    kira:        'Kira',
+    lbCash:      "Today's Cash",
+    lbProfit:    "Today's Profit",
+    lbStock:     'Critical Stock',
+    lbLosing:    'Losing Products',
+    whyLabel:    'WHY THIS MATTERS',
+    nextLabel:   'NEXT STEP',
+    tierLocal:   'Local (Tier 1)',
+    tierCloud:   'Cloud — Tier 2',
+    confidence:  'Confidence',
+    rcptTitle:   'Receipt Scan Result',
+    rcptPrompt:  'Shall I record this in the cashbook?',
+    rcptYes:     'Yes, record',
+    rcptNo:      'No thanks',
+    rcptDone:    '✅ Recorded!',
+    rcptSkip:    'OK, skipped.',
+    total:       'TOTAL',
+    errMsg:      'Something went wrong. Please try again.',
+  },
+};
+
+function t(k) { return T[lang][k] || k; }
+
+// ── Boot ──────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  fetchHealth();
+  fetchBusiness();
+  loadAlerts();
+  setInterval(loadAlerts, 30000);
+});
+
+// ── Language toggle ───────────────────────────────────────────
+function setLang(l) {
+  lang = l;
+  document.getElementById('btnId').classList.toggle('active', l === 'id');
+  document.getElementById('btnEn').classList.toggle('active', l === 'en');
+  applyLabels();
+  document.getElementById('chatInput').placeholder = t('placeholder');
+}
+
+function applyLabels() {
+  const ids = [
+    'chatTitle','chatHint','alertsTitle','refreshLabel','sendLabel',
+    'bizLabel','lbCash','lbProfit','lbStock','lbLosing',
+  ];
+  ids.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = t(id);
+  });
+  // alertsHint only if visible
+  const ah = document.getElementById('alertsHint');
+  if (ah) ah.textContent = t('alertsHint');
+}
+
+// ── User switch ───────────────────────────────────────────────
+function switchUser(newUid) {
+  uid = newUid;
+  document.querySelectorAll('.user-btn').forEach(b =>
+    b.classList.toggle('active', b.dataset.uid === newUid)
+  );
+  clearChat();
+  fetchBusiness();
+  loadAlerts();
+}
+
+function clearChat() {
+  const body = document.getElementById('chatBody');
+  body.innerHTML = `<div class="empty-state" id="chatEmpty">
+    <span id="chatHint">${esc(t('chatHint'))}</span></div>`;
+}
+
+// ── /health ───────────────────────────────────────────────────
+async function fetchHealth() {
+  try {
+    const d = await (await fetch('/health')).json();
+    document.getElementById('footerMode').textContent =
+      `mode: ${d.mode} · firestore: ${d.firestore}`;
+  } catch (_) {}
+}
+
+// ── /business ─────────────────────────────────────────────────
+async function fetchBusiness() {
+  try {
+    const d = await (await fetch(`/business/${uid}`)).json();
+    document.getElementById('bizName').textContent = d.business_name;
+
+    setMetric('Cash',   d.cash_balance,   formatRp(d.cash_balance),
+      d.cash_balance < 300000 ? 'danger' : d.cash_balance < 600000 ? 'warn' : 'ok');
+
+    setMetric('Profit', d.net_profit,     formatRp(d.net_profit),
+      d.net_profit < 0 ? 'danger' : d.net_profit < 50000 ? 'warn' : 'ok');
+
+    setMetric('Stock',  d.critical_stock_count, d.critical_stock_count,
+      d.critical_stock_count > 2 ? 'danger' : d.critical_stock_count > 0 ? 'warn' : 'ok');
+
+    setMetric('Losing', d.losing_product_count, d.losing_product_count,
+      d.losing_product_count > 0 ? 'danger' : 'ok');
+  } catch (_) {}
+}
+
+function setMetric(id, _raw, display, color) {
+  document.getElementById('card'  + id).className = `card ${color}`;
+  const v = document.getElementById('val' + id);
+  v.textContent = display;
+  v.className   = `card-value ${color}`;
+}
+
+// ── /proactive ────────────────────────────────────────────────
+async function loadAlerts() {
+  const body = document.getElementById('alertsBody');
+  try {
+    const d = await (await fetch(`/proactive/${uid}`)).json();
+    const alerts = d.alerts || [];
+    if (!alerts.length) {
+      body.innerHTML = `<div class="empty-state">${esc(t('noAlerts'))}</div>`;
+      return;
+    }
+    body.innerHTML = alerts.map(renderAlert).join('');
+  } catch (_) {
+    body.innerHTML = `<div class="empty-state" style="color:#EF4444">${esc(t('errMsg'))}</div>`;
+  }
+}
+
+function renderAlert(a) {
+  const ico = { critical:'🔴', high:'🟠', medium:'🟡' }[a.severity] || '⚪';
+  const az  = a.analysis || {};
+  const why  = az.why_it_matters || '';
+  const next = az.next_step      || '';
+  return `
+    <div class="alert-card ${esc(a.severity)}">
+      <div class="alert-head">
+        <span>${ico}</span>
+        <span class="alert-cat">${esc((a.category||'').toUpperCase())}</span>
+        <span class="alert-item">${esc(a.item||'')}</span>
+        <span class="alert-score">score ${a.severity_score}</span>
+      </div>
+      <div class="alert-body">
+        ${why  ? `<div class="section-label">${t('whyLabel')}</div>
+                  <div class="section-text">${esc(why)}</div>` : ''}
+        ${next ? `<div class="next-step">✅ ${esc(next)}</div>` : ''}
+      </div>
+    </div>`;
+}
+
+// ── /chat ─────────────────────────────────────────────────────
+async function sendChat() {
+  const inp = document.getElementById('chatInput');
+  const msg = inp.value.trim();
+  if (!msg) return;
+
+  inp.value = '';
+  autoGrow(inp);
+  removeEmptyState('chatEmpty');
+  addMsg('user', msg);
+
+  const btn  = document.getElementById('sendBtn');
+  btn.disabled = true;
+  const tid  = addTyping();
+
+  try {
+    const r = await fetch('/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user_id: uid, message: msg, language: lang }),
+    });
+    removeEl(tid);
+    addMsg('kira', r.ok ? (await r.json()).response : t('errMsg'));
+  } catch (_) {
+    removeEl(tid);
+    addMsg('kira', t('errMsg'));
+  } finally {
+    btn.disabled = false;
+    inp.focus();
+  }
+}
+
+function onInputKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChat(); }
+}
+
+function autoGrow(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 110) + 'px';
+}
+
+// ── /scan-receipt ─────────────────────────────────────────────
+function pickReceipt() { document.getElementById('fileInput').click(); }
+
+async function onReceiptFile(input) {
+  const file = input.files[0];
+  if (!file) return;
+  input.value = '';
+
+  removeEmptyState('chatEmpty');
+  addMsg('user', `📷 ${file.name}`);
+  const tid = addTyping();
+
+  try {
+    const fd = new FormData();
+    fd.append('file', file);
+    const r = await fetch('/scan-receipt', { method: 'POST', body: fd });
+    removeEl(tid);
+    if (!r.ok) throw new Error();
+    addReceiptCard(await r.json());
+  } catch (_) {
+    removeEl(tid);
+    addMsg('kira', t('errMsg'));
+  }
+}
+
+function addReceiptCard(d) {
+  const tier = d.tier_used === 'local' ? t('tierLocal') : t('tierCloud');
+  const conf = (d.confidence || 0).toFixed(1);
+  const rows = (d.items || []).map(it => {
+    const sub = it.quantity * it.unit_price;
+    return `<div class="receipt-row">
+      <span>${esc(it.name||'')} × ${it.quantity}</span>
+      <span>${formatRp(sub)}</span>
+    </div>`;
+  }).join('') || '<em style="color:#94A3B8">—</em>';
+
+  const cardId = 'rc-' + Date.now();
+  const html = `
+    <div class="receipt-card">
+      <div class="receipt-title">📄 ${t('rcptTitle')}</div>
+      <div class="receipt-meta">${tier} · ${t('confidence')}: ${conf}%</div>
+      <div class="receipt-rows">${rows}</div>
+      <div class="receipt-total">
+        <span>${t('total')}</span><span>${formatRp(d.total||0)}</span>
+      </div>
+      <div class="receipt-prompt">${t('rcptPrompt')}</div>
+      <div class="receipt-btns" id="${cardId}">
+        <button class="btn btn-confirm btn-sm"
+          onclick="rcptAction('${cardId}',true)">${t('rcptYes')}</button>
+        <button class="btn btn-secondary btn-sm"
+          onclick="rcptAction('${cardId}',false)">${t('rcptNo')}</button>
+      </div>
+    </div>`;
+
+  const body = document.getElementById('chatBody');
+  const wrap = document.createElement('div');
+  wrap.className = 'msg kira';
+  wrap.innerHTML = `<div class="msg-sender">${esc(t('kira'))}</div>${html}`;
+  body.appendChild(wrap);
+  body.scrollTop = body.scrollHeight;
+}
+
+function rcptAction(id, yes) {
+  const el = document.getElementById(id);
+  if (el) el.innerHTML = `<em style="color:${yes?'#16A34A':'#94A3B8'}">${
+    yes ? t('rcptDone') : t('rcptSkip')}</em>`;
+}
+
+// ── Chat DOM helpers ──────────────────────────────────────────
+function addMsg(role, text) {
+  const body = document.getElementById('chatBody');
+  const el = document.createElement('div');
+  el.className = `msg ${role}`;
+  const sender = role === 'user' ? t('you') : t('kira');
+  el.innerHTML = `<div class="msg-sender">${esc(sender)}</div>
+    <div class="msg-bubble">${esc(text)}</div>`;
+  body.appendChild(el);
+  body.scrollTop = body.scrollHeight;
+}
+
+function addTyping() {
+  const body = document.getElementById('chatBody');
+  const id   = 'ty-' + Date.now();
+  const el   = document.createElement('div');
+  el.className = 'msg kira';
+  el.id = id;
+  el.innerHTML = `<div class="msg-sender">${esc(t('kira'))}</div>
+    <div class="msg-bubble">
+      <div class="typing-dots"><span></span><span></span><span></span></div>
+    </div>`;
+  body.appendChild(el);
+  body.scrollTop = body.scrollHeight;
+  return id;
+}
+
+function removeEl(id) { const e = document.getElementById(id); if (e) e.remove(); }
+function removeEmptyState(id) { removeEl(id); }
+
+// ── AMD Modal ─────────────────────────────────────────────────
+function openAmd()  { document.getElementById('amdOverlay').classList.add('open'); }
+function closeAmd() { document.getElementById('amdOverlay').classList.remove('open'); }
+function overlayClick(e) { if (e.target === document.getElementById('amdOverlay')) closeAmd(); }
+
+// ── Utility ───────────────────────────────────────────────────
+function formatRp(n) {
+  if (n === null || n === undefined) return '—';
+  const neg = n < 0;
+  return (neg ? '-' : '') + 'Rp ' + Math.abs(n).toLocaleString('id-ID');
+}
+
+function esc(s) {
+  return String(s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+</script>
+</body>
+</html>

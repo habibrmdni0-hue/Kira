@@ -6,7 +6,8 @@ bookkeeper, proactive) call into this module instead of maintaining their own
 hardcoded data dicts.
 
 Connection strategy (selected automatically at first call):
-  FIREBASE_CREDENTIALS_PATH set + file exists → Firestore (live reads)
+  FIREBASE_CREDENTIALS_JSON env var set → parse JSON inline (Railway deploy)
+  FIREBASE_CREDENTIALS_PATH set + file exists → read JSON from file (local dev)
   Otherwise → LOCAL_FALLBACK (mirrors seed data exactly, for local dev)
 
 MOCK_MODE does NOT gate this module. Data reads are always live (Firestore or
@@ -29,6 +30,7 @@ Firestore schema (collection: "businesses", document id = user_id):
 """
 from __future__ import annotations
 
+import json
 import os
 from typing import Any, Dict, List, Optional
 
@@ -124,14 +126,22 @@ def _get_db():
     """
     Return a Firestore client, or None if credentials are not configured.
     Connection is attempted once and the result is cached for the process lifetime.
+
+    Credential resolution order:
+      1. FIREBASE_CREDENTIALS_JSON env var (inline JSON — Railway / cloud deploy)
+      2. FIREBASE_CREDENTIALS_PATH file path (local dev)
+      3. Neither set → return None, use LOCAL_FALLBACK
     """
     global _db, _db_tried
     if _db_tried:
         return _db
 
     _db_tried = True
-    creds_path = getattr(settings, "firebase_credentials_path", "") or ""
-    if not creds_path or not os.path.isfile(creds_path):
+
+    creds_json_str = os.getenv("FIREBASE_CREDENTIALS_JSON", "").strip()
+    creds_path     = getattr(settings, "firebase_credentials_path", "") or ""
+
+    if not creds_json_str and (not creds_path or not os.path.isfile(creds_path)):
         return None
 
     try:
@@ -139,17 +149,27 @@ def _get_db():
         from firebase_admin import credentials, firestore as fb_firestore
 
         if not firebase_admin._apps:
-            cred = credentials.Certificate(creds_path)
+            if creds_json_str:
+                cred   = credentials.Certificate(json.loads(creds_json_str))
+                source = "FIREBASE_CREDENTIALS_JSON env var"
+            else:
+                cred   = credentials.Certificate(creds_path)
+                source = creds_path
             firebase_admin.initialize_app(cred)
 
         _db = fb_firestore.client()
-        print(f"[firestore_client] Connected to Firestore (credentials: {creds_path})")
+        print(f"[firestore_client] Connected to Firestore ({source})")
     except Exception as exc:
         print(f"[firestore_client] Could not connect to Firestore: {exc}")
         print("[firestore_client] Using local fallback data.")
         _db = None
 
     return _db
+
+
+def firestore_status() -> str:
+    """Return 'connected' if Firestore is live, 'fallback' if using local data."""
+    return "connected" if _get_db() is not None else "fallback"
 
 
 # ──────────────────────────────────────────────────────────────
