@@ -1,0 +1,10 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+RUN pip install fastapi uvicorn
+
+COPY api/server_minimal.py ./api/server_minimal.py
+COPY api/__init__.py ./api/__init__.py
+
+CMD ["python", "api/server_minimal.py"]
