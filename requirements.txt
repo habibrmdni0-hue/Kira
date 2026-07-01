@@ -1,0 +1,23 @@
+# Orchestration
+langchain>=0.3.0
+langchain-openai>=0.2.0
+langgraph>=0.2.0
+langchain-core>=0.3.0
+
+# LLM client (used by reasoning_agent and eyes_agent cloud tier)
+openai>=1.50.0
+
+# Firestore / Firebase — unified business data layer
+firebase-admin>=6.0.0
+
+# Config
+python-dotenv>=1.0.0
+pydantic>=2.0.0
+
+# EyesAgent — local OCR (Tier 1)
+# NOTE: pytesseract is a Python wrapper; the Tesseract binary must also be
+# installed at the OS level.  See README for platform instructions.
+pytesseract>=0.3.10
+opencv-python>=4.8.0
+Pillow>=10.0.0
+numpy>=1.24.0

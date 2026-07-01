@@ -1,0 +1,32 @@
+# docker-compose.yml — Kira local development
+#
+# Tujuan file ini: supaya kamu/Daffa/Farhan bisa jalanin Kira yang IDENTIK
+# di laptop masing-masing tanpa "di laptopku jalan, di laptopmu enggak."
+# Ini JUGA yang dipakai sistem scoring AMD/lablab.ai untuk reproduce project.
+#
+# PENTING soal biaya: compose file ini TIDAK menyalakan GPU apa pun.
+# MI300X selalu dikelola terpisah lewat AMD Developer Cloud dashboard.
+# Container di sini cuma logic orchestrator + agents, ringan, gratis dijalankan
+# di laptop biasa.
+
+services:
+  kira-orchestrator:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: kira-orchestrator
+    env_file:
+      - .env
+    ports:
+      - "8000:8000"
+    volumes:
+      # Mount source code untuk hot-reload saat development
+      # (hapus baris ini saat build final untuk submission)
+      - ./:/app
+    restart: unless-stopped
+    networks:
+      - kira-net
+
+networks:
+  kira-net:
+    driver: bridge

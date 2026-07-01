@@ -1,0 +1,17 @@
+# .dockerignore — supaya image ringan dan .env tidak ikut ter-bundle
+
+.env
+.git
+.gitignore
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+.vscode/
+.idea/
+README.md
+docker-compose.yml
+*.log
