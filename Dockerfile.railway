@@ -3,7 +3,7 @@ FROM python:3.11-slim
 WORKDIR /app
 
 # Group 1: Core web server (confirmed working)
-RUN pip install fastapi uvicorn python-multipart
+RUN pip install fastapi uvicorn python-multipart python-dotenv
 
 # Group 2: Firebase (needed for data layer)
 RUN pip install firebase-admin
