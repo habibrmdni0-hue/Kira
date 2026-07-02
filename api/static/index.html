@@ -14,11 +14,13 @@
       --sb-muted: rgba(255,255,255,.25);
       --sb-hover: rgba(255,255,255,.08);
       --sb-act:   rgba(37,99,235,.75);
-      --bg:       #F0F4F8;
+      --sb-accent:#60A5FA;
+      --bg:       #F8F9FB;
       --card:     #FFFFFF;
       --border:   #E2E8F0;
-      --sh:       0 1px 3px rgba(0,0,0,.06), 0 2px 10px rgba(0,0,0,.04);
-      --r:        14px;
+      --sh:       0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
+      --sh-hover: 0 4px 12px rgba(0,0,0,.08), 0 2px 4px rgba(0,0,0,.05);
+      --r:        12px;
       --accent:   #2563EB;
       --green:    #10B981;
       --amber:    #F59E0B;
@@ -26,6 +28,9 @@
       --t1:       #111827;
       --t2:       #6B7280;
       --t3:       #9CA3AF;
+      --ok-bg:    #D1FAE5; --ok-ic:    #059669;
+      --warn-bg:  #FEF3C7; --warn-ic:  #D97706;
+      --danger-bg:#FEE2E2; --danger-ic:#DC2626;
     }
 
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -41,7 +46,7 @@
     /* ─────────────────── SIDEBAR ──────────────────────── */
     .sidebar {
       width: var(--sb-w);
-      background: var(--sb-bg);
+      background: linear-gradient(180deg, #24395C 0%, var(--sb-bg) 45%, var(--sb-bg) 100%);
       position: fixed; left: 0; top: 0; bottom: 0;
       display: flex; flex-direction: column;
       z-index: 100;
@@ -91,15 +96,26 @@
     .sb-nav-item {
       display: flex; align-items: center; gap: 10px;
       padding: 10px 14px; margin: 2px 8px; border-radius: 9px;
-      cursor: pointer; transition: all .15s;
+      cursor: pointer; transition: background-color .15s ease, color .15s ease, box-shadow .15s ease;
       color: var(--sb-text); user-select: none;
+      position: relative;
     }
     .sb-nav-item:hover { background: var(--sb-hover); color: #fff; }
     .sb-nav-item.active {
       background: var(--sb-act); color: #fff;
-      box-shadow: 0 2px 10px rgba(37,99,235,.35);
+      box-shadow: 0 2px 10px rgba(37,99,235,.35), inset 0 0 0 1px rgba(255,255,255,.06);
     }
-    .sb-nav-icon  { font-size: 16px; width: 22px; text-align: center; flex-shrink: 0; }
+    .sb-nav-item.active::before {
+      content: '';
+      position: absolute; left: -8px; top: 50%; transform: translateY(-50%);
+      width: 3px; height: 18px; border-radius: 0 3px 3px 0;
+      background: var(--sb-accent);
+    }
+    .sb-nav-icon  {
+      width: 20px; height: 20px; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .sb-nav-icon svg { width: 20px; height: 20px; stroke: currentColor; }
     .sb-nav-label { font-size: 13px; font-weight: 500; }
 
     /* Business selector */
@@ -115,7 +131,7 @@
     .sb-user-item {
       display: flex; align-items: center; gap: 8px;
       padding: 7px 12px; border-radius: 7px; cursor: pointer;
-      transition: all .15s; color: var(--sb-text);
+      transition: background-color .15s ease, color .15s ease; color: var(--sb-text);
       font-size: 12px; font-weight: 500; user-select: none;
     }
     .sb-user-item:hover { background: var(--sb-hover); color: #fff; }
@@ -149,8 +165,10 @@
       padding: 8px 12px; border-radius: 8px;
       font-size: 11px; font-weight: 700; letter-spacing: .3px;
       width: 100%; text-align: left; font-family: inherit;
-      transition: opacity .15s;
+      transition: opacity .15s ease, transform .15s ease;
+      display: flex; align-items: center; gap: 7px;
     }
+    .amd-btn svg { width: 14px; height: 14px; stroke: currentColor; flex-shrink: 0; }
     .amd-btn:hover { opacity: .85; }
     .sb-mode { font-size: 10px; color: var(--sb-muted); line-height: 1.5; }
 
@@ -173,7 +191,7 @@
       display: flex; align-items: center; justify-content: space-between;
       flex-shrink: 0;
     }
-    .vh-title { font-size: 17px; font-weight: 700; color: var(--t1); }
+    .vh-title { font-size: 24px; font-weight: 700; color: var(--t1); letter-spacing: -.3px; }
     .vh-sub   { font-size: 11px; color: var(--t3); margin-top: 1px; }
     .vh-actions { display: flex; gap: 8px; align-items: center; }
 
@@ -196,11 +214,11 @@
     }
     .card-hd {
       display: flex; align-items: center; justify-content: space-between;
-      padding: 13px 17px 9px;
+      padding: 16px 20px 10px;
     }
     .card-title {
-      font-size: 10px; font-weight: 700; text-transform: uppercase;
-      letter-spacing: .7px; color: var(--t2);
+      font-size: 11px; font-weight: 600; text-transform: uppercase;
+      letter-spacing: .5px; color: var(--t2);
     }
     .badge {
       font-size: 10px; color: var(--t3);
@@ -210,31 +228,43 @@
     /* ─────────────────── VIEW 1: Overview ─────────────── */
     .ov-metrics {
       display: grid; grid-template-columns: repeat(4,1fr);
-      gap: 12px; margin-bottom: 14px;
+      gap: 24px; margin-bottom: 24px;
     }
     .metric-card {
-      padding: 16px 18px 14px;
-      border-left: 4px solid var(--border);
-      transition: border-color .2s;
+      padding: 20px;
+      display: flex; align-items: flex-start; gap: 14px;
+      transition: transform .15s ease, box-shadow .15s ease;
     }
-    .metric-card.ok     { border-left-color: var(--green); }
-    .metric-card.warn   { border-left-color: var(--amber); }
-    .metric-card.danger { border-left-color: var(--red); }
+    .metric-card:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--sh-hover);
+    }
+    .metric-icon {
+      width: 40px; height: 40px; border-radius: 10px; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      background: var(--bg); color: var(--t3);
+      transition: background-color .15s ease, color .15s ease;
+    }
+    .metric-icon svg { width: 20px; height: 20px; stroke: currentColor; }
+    .metric-icon.ok     { background: var(--ok-bg);     color: var(--ok-ic); }
+    .metric-icon.warn   { background: var(--warn-bg);   color: var(--warn-ic); }
+    .metric-icon.danger { background: var(--danger-bg); color: var(--danger-ic); }
+    .metric-body { min-width: 0; flex: 1; }
     .metric-label {
-      font-size: 10px; font-weight: 700; text-transform: uppercase;
-      letter-spacing: .7px; color: var(--t2); margin-bottom: 7px;
+      font-size: 11px; font-weight: 600; text-transform: uppercase;
+      letter-spacing: .5px; color: var(--t2); margin-bottom: 7px;
     }
-    .metric-value { font-size: 21px; font-weight: 800; letter-spacing: -.4px; line-height: 1; }
+    .metric-value { font-size: 28px; font-weight: 700; letter-spacing: -.4px; line-height: 1; }
     .metric-value.ok     { color: #059669; }
     .metric-value.warn   { color: #D97706; }
     .metric-value.danger { color: #DC2626; }
-    .metric-sub { font-size: 11px; color: var(--t3); margin-top: 5px; }
+    .metric-sub { font-size: 11px; color: var(--t3); margin-top: 6px; }
 
     .ov-row2 {
       display: grid; grid-template-columns: 2fr 1fr;
-      gap: 12px; margin-bottom: 14px;
+      gap: 24px; margin-bottom: 24px;
     }
-    .chart-pad { padding: 0 14px 12px; }
+    .chart-pad { padding: 0 20px 16px; }
     .h160 { position: relative; height: 160px; }
     .h200 { position: relative; height: 200px; }
     .h220 { position: relative; height: 220px; }
@@ -263,7 +293,7 @@
     /* Overview compact forecast */
     .ov-fc {
       display: flex; gap: 14px; align-items: flex-start;
-      padding: 14px 17px;
+      padding: 16px 20px 20px;
     }
     .ov-fc-kpi { min-width: 95px; }
     .ov-fc-label {
@@ -279,12 +309,38 @@
       background: var(--bg); border-radius: 8px; padding: 10px 12px;
     }
 
+    /* Insight of the day — surfaces the most urgent alert on the overview */
+    .insight-card {
+      margin-top: 24px; padding: 16px 20px;
+      display: flex; align-items: flex-start; gap: 14px;
+      border-left: 4px solid var(--border);
+    }
+    .insight-card.critical { border-left-color: var(--red); }
+    .insight-card.high     { border-left-color: #F97316; }
+    .insight-card.medium   { border-left-color: var(--amber); }
+    .insight-icon {
+      width: 36px; height: 36px; border-radius: 10px; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      background: var(--bg); color: var(--t3);
+    }
+    .insight-icon svg { width: 18px; height: 18px; stroke: currentColor; }
+    .insight-icon.critical { background: var(--danger-bg); color: var(--danger-ic); }
+    .insight-icon.high     { background: #FFEDD5;          color: #C2410C; }
+    .insight-icon.medium   { background: var(--warn-bg);   color: var(--warn-ic); }
+    .insight-body { min-width: 0; flex: 1; }
+    .insight-label {
+      font-size: 11px; font-weight: 600; text-transform: uppercase;
+      letter-spacing: .5px; color: var(--t2); margin-bottom: 4px;
+    }
+    .insight-title { font-size: 14px; font-weight: 700; color: var(--t1); margin-bottom: 4px; }
+    .insight-text  { font-size: 13px; color: var(--t2); line-height: 1.55; }
+
     /* ─────────────────── VIEW 2: Analytics ────────────── */
-    .an-grid { display: flex; flex-direction: column; gap: 12px; }
-    .an-row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .an-grid { display: flex; flex-direction: column; gap: 24px; }
+    .an-row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
 
     /* ─────────────────── VIEW 3: Forecast ─────────────── */
-    .fc-card { padding: 18px 20px 22px; }
+    .fc-card { padding: 20px 20px 24px; }
     .fc-hd {
       display: flex; align-items: center; gap: 10px; margin-bottom: 18px;
     }
@@ -401,7 +457,7 @@
       Fix: remove all height/overflow constraints so cards grow to content.
     */
     .alerts-list {
-      display: flex; flex-direction: column; gap: 14px;
+      display: flex; flex-direction: column; gap: 20px;
     }
     .alert-card {
       border: 1px solid var(--border);
@@ -433,7 +489,7 @@
     }
 
     /* Alert body — no overflow:hidden, full content visible */
-    .alert-bd { padding: 14px 16px; }
+    .alert-bd { padding: 16px 20px; }
 
     .sec-label {
       font-size: 9px; font-weight: 800; text-transform: uppercase;
@@ -467,7 +523,12 @@
     .btn:disabled { opacity: .45; cursor: not-allowed; }
     .btn-primary   { background: var(--accent); color: #fff; }
     .btn-secondary { background: #EEF2F7; color: var(--t1); border: 1px solid var(--border); }
-    .btn-icon      { background: #EEF2F7; color: var(--t1); padding: 8px 10px; font-size: 16px; border-radius: 8px; border: 1px solid var(--border); cursor: pointer; }
+    .btn-icon      {
+      background: #EEF2F7; color: var(--t1); padding: 8px 10px; font-size: 16px;
+      border-radius: 8px; border: 1px solid var(--border); cursor: pointer;
+      transition: background-color .15s ease, border-color .15s ease;
+    }
+    .btn-icon:hover { background: #E2E8F0; border-color: #CBD5E1; }
     .btn-sm        { padding: 5px 12px; font-size: 11px; }
     .btn-confirm   { background: #059669; color: #fff; }
 
@@ -519,23 +580,23 @@
     <div class="sb-section-label" id="navSectionLabel">MENU</div>
 
     <div class="sb-nav-item active" data-view="overview" onclick="showView('overview')">
-      <span class="sb-nav-icon">🏠</span>
+      <span class="sb-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 12 3l9 6.5"/><path d="M5 10.5V20a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1v-9.5"/></svg></span>
       <span class="sb-nav-label" id="navOv">Ringkasan</span>
     </div>
     <div class="sb-nav-item" data-view="analytics" onclick="showView('analytics')">
-      <span class="sb-nav-icon">📊</span>
+      <span class="sb-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="20" x2="6" y2="14"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="18" y1="20" x2="18" y2="10"/></svg></span>
       <span class="sb-nav-label" id="navAn">Analitik</span>
     </div>
     <div class="sb-nav-item" data-view="forecast" onclick="showView('forecast')">
-      <span class="sb-nav-icon">🔮</span>
+      <span class="sb-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 18 8.5 10.5 13.5 15.5 23 6"/><polyline points="17 6 23 6 23 12"/></svg></span>
       <span class="sb-nav-label" id="navFc">Forecast</span>
     </div>
     <div class="sb-nav-item" data-view="chat" onclick="showView('chat')">
-      <span class="sb-nav-icon">💬</span>
+      <span class="sb-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-4.8 7.6 8.5 8.5 0 0 1-8.9-.9L3 21l1.9-4.3a8.38 8.38 0 0 1-.9-3.9 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg></span>
       <span class="sb-nav-label" id="navCh">Chat Kira</span>
     </div>
     <div class="sb-nav-item" data-view="alerts" onclick="showView('alerts')">
-      <span class="sb-nav-icon">🔔</span>
+      <span class="sb-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></span>
       <span class="sb-nav-label" id="navAl">Peringatan</span>
     </div>
   </nav>
@@ -566,7 +627,10 @@
         <button class="lang-btn"        id="btnEn" onclick="setLang('en')">EN</button>
       </div>
     </div>
-    <button class="amd-btn" onclick="openAmd()">⚡ AMD MI300X ▸</button>
+    <button class="amd-btn" onclick="openAmd()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+      <span>AMD MI300X ▸</span>
+    </button>
     <div class="sb-mode" id="modeStatus">mode: — · firestore: —</div>
   </div>
 
@@ -593,24 +657,36 @@
       <!-- 4 metric cards -->
       <div class="ov-metrics">
         <div class="card metric-card" id="cardCash">
-          <div class="metric-label" id="lbCash">Kas Hari Ini</div>
-          <div class="metric-value" id="valCash">—</div>
-          <div class="metric-sub"   id="subCash"></div>
+          <div class="metric-icon" id="iconCash"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/><path d="M18 12a2 2 0 0 0 0 4h4v-4z"/></svg></div>
+          <div class="metric-body">
+            <div class="metric-label" id="lbCash">Kas Hari Ini</div>
+            <div class="metric-value" id="valCash">—</div>
+            <div class="metric-sub"   id="subCash"></div>
+          </div>
         </div>
         <div class="card metric-card" id="cardProfit">
-          <div class="metric-label" id="lbProfit">Profit Hari Ini</div>
-          <div class="metric-value" id="valProfit">—</div>
-          <div class="metric-sub"   id="subProfit"></div>
+          <div class="metric-icon" id="iconProfit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 18 8.5 10.5 13.5 15.5 23 6"/><polyline points="17 6 23 6 23 12"/></svg></div>
+          <div class="metric-body">
+            <div class="metric-label" id="lbProfit">Profit Hari Ini</div>
+            <div class="metric-value" id="valProfit">—</div>
+            <div class="metric-sub"   id="subProfit"></div>
+          </div>
         </div>
         <div class="card metric-card" id="cardStock">
-          <div class="metric-label" id="lbStock">Stok Kritis</div>
-          <div class="metric-value" id="valStock">—</div>
-          <div class="metric-sub"   id="subStock"></div>
+          <div class="metric-icon" id="iconStock"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4a2 2 0 0 0 1-1.73z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></div>
+          <div class="metric-body">
+            <div class="metric-label" id="lbStock">Stok Kritis</div>
+            <div class="metric-value" id="valStock">—</div>
+            <div class="metric-sub"   id="subStock"></div>
+          </div>
         </div>
         <div class="card metric-card" id="cardLosing">
-          <div class="metric-label" id="lbLosing">Produk Merugi</div>
-          <div class="metric-value" id="valLosing">—</div>
-          <div class="metric-sub"   id="subLosing"></div>
+          <div class="metric-icon" id="iconLosing"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></svg></div>
+          <div class="metric-body">
+            <div class="metric-label" id="lbLosing">Produk Merugi</div>
+            <div class="metric-value" id="valLosing">—</div>
+            <div class="metric-sub"   id="subLosing"></div>
+          </div>
         </div>
       </div>
 
@@ -649,6 +725,18 @@
         </div>
         <div class="ov-fc" id="ovFcBody">
           <span style="font-size:12px;color:var(--t3)">Memuat…</span>
+        </div>
+      </div>
+
+      <!-- Insight of the day — most urgent active alert -->
+      <div class="card insight-card" id="insightCard" style="display:none">
+        <div class="insight-icon" id="insightIcon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        </div>
+        <div class="insight-body">
+          <div class="insight-label" id="insightLabel">Insight Hari Ini</div>
+          <div class="insight-title" id="insightTitle"></div>
+          <div class="insight-text"  id="insightText"></div>
         </div>
       </div>
 
@@ -810,6 +898,7 @@ const T = {
     fcStockout:'Akan Habis ≤7 Hari', fcSummary:'Ringkasan', fcVsPrior:'vs minggu lalu',
     fcNoLoss:'Tidak ada', fcDays:'hari', daysSuffix:'h',
     whyLabel:'KENAPA INI PENTING', nextLabel:'LANGKAH SELANJUTNYA',
+    insightLabel:'Insight Hari Ini',
     noAlerts:'Tidak ada peringatan aktif. Semua aman ✅',
     you:'Anda', kira:'Kira',
     chatEmptyTitle:'Halo! Saya Kira.',
@@ -845,6 +934,7 @@ const T = {
     fcStockout:'Running Out ≤7 Days', fcSummary:'Summary', fcVsPrior:'vs prior week',
     fcNoLoss:'None', fcDays:'days', daysSuffix:'d',
     whyLabel:'WHY THIS MATTERS', nextLabel:'NEXT STEP',
+    insightLabel:'Insight of the Day',
     noAlerts:'No active alerts. All clear ✅',
     you:'You', kira:'Kira',
     chatEmptyTitle:"Hello! I'm Kira.",
@@ -941,7 +1031,7 @@ function setLang(l) {
 function _applyStaticLabels() {
   const ids = ['navOv','navAn','navFc','navCh','navAl',
                 'navSectionLabel','usersLabel','langLabel',
-                'lbCash','lbProfit','lbStock','lbLosing'];
+                'lbCash','lbProfit','lbStock','lbLosing','insightLabel'];
   ids.forEach(k => { const el = document.getElementById(k); if (el) el.textContent = t(k); });
 
   // Chart card titles (same key, different element IDs)
@@ -1049,9 +1139,11 @@ function applyBizUI(d) {
 }
 
 function _setMetric(id, val, color, sub) {
-  document.getElementById('card'+id).className = `card metric-card ${color}`;
+  document.getElementById('card'+id).className = `card metric-card`;
   const v = document.getElementById('val'+id);
   v.textContent = val; v.className = `metric-value ${color}`;
+  const ic = document.getElementById('icon'+id);
+  if (ic) ic.className = `metric-icon ${color}`;
   const s = document.getElementById('sub'+id);
   if (s) s.textContent = sub || '';
 }
@@ -1340,9 +1432,31 @@ async function loadAlerts() {
     body.innerHTML = alerts.length
       ? alerts.map(_renderAlert).join('')
       : `<div class="empty-state">${esc(t('noAlerts'))}</div>`;
+    renderInsightCard(alerts);
   } catch (_) {
     body.innerHTML = `<div class="empty-state" style="color:var(--red)">${esc(t('errMsg'))}</div>`;
   }
+}
+
+/* Insight of the day — surfaces the single most urgent alert on the overview */
+function _severityRank(s) { return { critical: 3, high: 2, medium: 1 }[s] || 0; }
+
+function renderInsightCard(alerts) {
+  const card = document.getElementById('insightCard');
+  if (!alerts.length) { card.style.display = 'none'; return; }
+
+  const top = [...alerts].sort((a, b) =>
+    _severityRank(b.severity) - _severityRank(a.severity) ||
+    (b.severity_score || 0) - (a.severity_score || 0)
+  )[0];
+  const az = top.analysis || {};
+
+  card.className = `card insight-card ${esc(top.severity || '')}`;
+  document.getElementById('insightIcon').className = `insight-icon ${esc(top.severity || '')}`;
+  document.getElementById('insightLabel').textContent = t('insightLabel');
+  document.getElementById('insightTitle').textContent = top.item || '';
+  document.getElementById('insightText').textContent  = az.next_step || az.why_it_matters || '';
+  card.style.display = '';
 }
 
 function _renderAlert(a) {
