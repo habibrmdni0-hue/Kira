@@ -34,6 +34,9 @@ try:
         firestore_status,
         get_business_state,
         get_daily_sales_timeseries,
+        get_sales_history,
+        record_transaction,
+        update_inventory_stock,
     )
     from data.forecast import forecast_business
     from orchestrator import KiraOrchestrator, KiraRequest, run_proactive_check
@@ -185,6 +188,7 @@ def business(user_id: str) -> Dict[str, Any]:
         {
             "item":           item["item"],
             "unit":           item["unit"],
+            "stock":          item["stock"],
             "days_remaining": round(item["stock"] / item["daily_usage"], 1)
                               if item["daily_usage"] > 0 else None,
         }
@@ -203,6 +207,17 @@ def business(user_id: str) -> Dict[str, Any]:
         for sale in sales_7d
     ]
 
+    # Products with an estimated unit price (avg selling price over the last
+    # 7 days) — used to pre-fill the manual "Catat Penjualan" form.
+    products = [
+        {
+            "name":       p["item"],
+            "unit_price": round(p["revenue_7d"] / p["units_sold_7d"])
+                          if p.get("units_sold_7d") else None,
+        }
+        for p in get_sales_history(user_id)
+    ]
+
     return {
         "business_name":        state["business_name"],
         "language":             state.get("language", "id"),
@@ -215,6 +230,7 @@ def business(user_id: str) -> Dict[str, Any]:
         "gross_margin_pct":     fin.get("gross_margin_pct", 0.0),
         "inventory_items":      inventory_items,
         "product_margins":      product_margins,
+        "products":             products,
     }
 
 
@@ -241,6 +257,56 @@ def sales_history(user_id: str) -> Dict[str, Any]:
         "business_name": state["business_name"],
         "days":          len(history),
         "history":       history,
+    }
+
+
+# ── POST /transaction/{user_id} ──────────────────────────────────
+
+class TransactionRequest(BaseModel):
+    product_name: str
+    quantity: float
+    unit_price: float
+
+
+@app.post("/transaction/{user_id}")
+def transaction(user_id: str, body: TransactionRequest) -> Dict[str, Any]:
+    if body.quantity <= 0 or body.unit_price <= 0:
+        raise HTTPException(status_code=400, detail="quantity and unit_price must be positive numbers")
+
+    try:
+        result = record_transaction(user_id, body.product_name, body.quantity, body.unit_price)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
+
+    revenue = body.quantity * body.unit_price
+    return {
+        "success":          True,
+        "new_cash_balance": result["new_cash_balance"],
+        "message":          f"Penjualan Rp{int(revenue):,} dicatat.".replace(",", "."),
+    }
+
+
+# ── POST /inventory-update/{user_id} ─────────────────────────────
+
+class InventoryUpdateRequest(BaseModel):
+    item_name: str
+    new_stock_quantity: float
+
+
+@app.post("/inventory-update/{user_id}")
+def inventory_update(user_id: str, body: InventoryUpdateRequest) -> Dict[str, Any]:
+    if body.new_stock_quantity < 0:
+        raise HTTPException(status_code=400, detail="new_stock_quantity must be a positive number")
+
+    try:
+        result = update_inventory_stock(user_id, body.item_name, body.new_stock_quantity)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
+
+    return {
+        "success":       True,
+        "updated_item":  result["updated_item"],
+        "message":       f"Stok {result['updated_item']} diperbarui menjadi {result['new_stock']}.",
     }
 
 

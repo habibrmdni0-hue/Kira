@@ -367,3 +367,70 @@ def get_daily_sales_timeseries(user_id: str) -> List[Dict[str, Any]]:
     """
     state = get_business_state(user_id)
     return state.get("sales_history", []) if state else []
+
+
+# ──────────────────────────────────────────────────────────────
+# Writes — manual data entry from the dashboard
+# ──────────────────────────────────────────────────────────────
+
+def _persist(user_id: str, raw: Dict[str, Any]) -> None:
+    """Write the raw document back to its source (Firestore or LOCAL_FALLBACK)."""
+    db = _get_db()
+    if db is not None:
+        db.collection("businesses").document(user_id).set(raw, merge=True)
+    else:
+        _LOCAL_FALLBACK[user_id] = raw
+
+
+def record_transaction(user_id: str, product_name: str, quantity: float, unit_price: float) -> Dict[str, Any]:
+    """
+    Record a manual sale: adds revenue to cash_balance and appends/updates
+    today's entry in sales_history.
+
+    Raises ValueError if user_id is unknown or product_name doesn't exist
+    in that business's products (never silently creates a new product).
+    """
+    raw = _fetch_raw(user_id)
+    if raw is None:
+        raise ValueError(f"No business data for {user_id!r}")
+
+    products = raw.get("products", [])
+    if not any(p.get("name") == product_name for p in products):
+        raise ValueError(f"Product {product_name!r} not found for {user_id!r}")
+
+    revenue = quantity * unit_price
+    raw["cash_balance"] = raw.get("cash_balance", 0) + revenue
+
+    today   = _date.today().isoformat()
+    history = raw.setdefault("sales_history", [])
+    entry   = next((h for h in history if h["date"] == today), None)
+    if entry is not None:
+        entry["revenue"]      = entry.get("revenue", 0) + revenue
+        entry["transactions"] = entry.get("transactions", 0) + 1
+    else:
+        history.append({"date": today, "revenue": revenue, "transactions": 1})
+        history.sort(key=lambda h: h["date"])
+
+    _persist(user_id, raw)
+    return {"new_cash_balance": raw["cash_balance"]}
+
+
+def update_inventory_stock(user_id: str, item_name: str, new_stock_quantity: float) -> Dict[str, Any]:
+    """
+    Update the stock field for item_name in the business's inventory array.
+
+    Raises ValueError if user_id is unknown or item_name doesn't exist in
+    that business's inventory (never silently creates a new item).
+    """
+    raw = _fetch_raw(user_id)
+    if raw is None:
+        raise ValueError(f"No business data for {user_id!r}")
+
+    inventory = raw.get("inventory", [])
+    item = next((i for i in inventory if i.get("name") == item_name), None)
+    if item is None:
+        raise ValueError(f"Item {item_name!r} not found for {user_id!r}")
+
+    item["stock"] = new_stock_quantity
+    _persist(user_id, raw)
+    return {"updated_item": item_name, "new_stock": new_stock_quantity}

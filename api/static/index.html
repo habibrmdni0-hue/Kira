@@ -548,6 +548,78 @@
     .modal p  { font-size: 13px; line-height: 1.7; color: var(--t2); margin-bottom: 10px; }
     .modal code { background: var(--bg); padding: 1px 5px; border-radius: 4px; font-size: 12px; }
 
+    /* ─────────────────── VIEW 6: Catat Data (manual entry) ── */
+    .mn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+    .mn-body { padding: 4px 20px 20px; display: flex; flex-direction: column; }
+    .mn-label {
+      font-size: 11px; font-weight: 600; color: var(--t2);
+      margin: 14px 0 6px;
+    }
+    .mn-label:first-child { margin-top: 0; }
+    .mn-select, .mn-input {
+      border: 1px solid var(--border); border-radius: 8px;
+      padding: 9px 12px; font-size: 13px; font-family: inherit;
+      color: var(--t1); outline: none; background: #fff;
+      transition: border-color .15s ease, box-shadow .15s ease;
+    }
+    .mn-select:focus, .mn-input:focus {
+      border-color: var(--accent); box-shadow: 0 0 0 3px rgba(37,99,235,.1);
+    }
+    .mn-submit { margin-top: 16px; width: 100%; }
+    .mn-msg { margin-top: 10px; font-size: 12px; line-height: 1.5; }
+    .mn-msg:empty { margin-top: 0; }
+    .mn-msg.success { color: #065F46; background: #D1FAE5; padding: 8px 10px; border-radius: 8px; }
+    .mn-msg.error   { color: #991B1B; background: #FEE2E2; padding: 8px 10px; border-radius: 8px; }
+
+    /* ─────────────────── LANDING PAGE ──────────────────── */
+    .landing {
+      min-height: 100vh; width: 100%;
+      background: linear-gradient(160deg, #0F1F38 0%, #1B2E4B 45%, #14263f 100%);
+      color: #fff;
+      display: flex; flex-direction: column; align-items: center;
+      padding: 28px 24px 64px;
+    }
+    .lp-topbar {
+      width: 100%; max-width: 980px;
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 64px;
+    }
+    .lp-brand { font-size: 18px; font-weight: 800; letter-spacing: -.4px; }
+    .lp-brand em, .lp-logo em { color: #60A5FA; font-style: normal; }
+    .lp-hero { max-width: 720px; text-align: center; margin-bottom: 56px; }
+    .lp-logo { font-size: 52px; font-weight: 800; letter-spacing: -2px; margin-bottom: 20px; }
+    .lp-tagline { font-size: 22px; font-weight: 600; color: #E2E8F0; line-height: 1.5; margin-bottom: 20px; }
+    .lp-explain { font-size: 15px; color: rgba(255,255,255,.72); line-height: 1.75; margin-bottom: 32px; }
+    .lp-cta {
+      padding: 13px 30px; font-size: 14px; border-radius: 10px;
+      box-shadow: 0 10px 26px rgba(37,99,235,.35);
+    }
+    .lp-features {
+      width: 100%; max-width: 980px;
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;
+      margin-bottom: 56px;
+    }
+    .lp-feature-card {
+      background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.1);
+      border-radius: 14px; padding: 24px 20px; text-align: left;
+    }
+    .lp-feature-icon {
+      width: 40px; height: 40px; border-radius: 10px;
+      background: rgba(96,165,250,.15); color: #60A5FA;
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: 14px;
+    }
+    .lp-feature-icon svg { width: 20px; height: 20px; stroke: currentColor; }
+    .lp-feature-title { font-size: 15px; font-weight: 700; margin-bottom: 6px; }
+    .lp-feature-desc  { font-size: 13px; color: rgba(255,255,255,.65); line-height: 1.6; }
+    .lp-amd {
+      width: 100%; max-width: 720px;
+      background: rgba(0,145,106,.14); border: 1px solid rgba(0,145,106,.4);
+      border-radius: 14px; padding: 24px 28px; text-align: center;
+    }
+    .lp-amd-title { font-size: 15px; font-weight: 700; color: #6EE7B7; margin-bottom: 10px; }
+    .lp-amd-body  { font-size: 13px; color: rgba(255,255,255,.78); line-height: 1.7; }
+
     /* ─────────────────── Scrollbar ─────────────────────── */
     ::-webkit-scrollbar       { width: 4px; }
     ::-webkit-scrollbar-track { background: transparent; }
@@ -560,8 +632,51 @@
 </head>
 <body>
 
+<!-- ══════════════════ LANDING PAGE (story/marketing, no auth) ══ -->
+<div class="landing" id="landing">
+  <div class="lp-topbar">
+    <div class="lp-brand">Kira<em>AI</em></div>
+    <div class="lang-switch">
+      <button class="lang-btn active" id="lpBtnId" onclick="setLang('id')">ID</button>
+      <button class="lang-btn"        id="lpBtnEn" onclick="setLang('en')">EN</button>
+    </div>
+  </div>
+
+  <div class="lp-hero">
+    <div class="lp-logo">Kira<em>AI</em></div>
+    <div class="lp-tagline" id="lpTagline">AI co-pilot proaktif untuk 60 juta+ pemilik warung dan UMKM Indonesia</div>
+    <p class="lp-explain" id="lpExplain">Kira tidak menunggu ditanya. Enam agen AI khusus — Mata untuk baca nota, Juru Hitung untuk laporan keuangan, Penjaga Stok untuk prediksi kehabisan barang, Strategi untuk rekomendasi harga, dan Suara untuk percakapan natural — bekerja sama memantau bisnis Anda 24 jam dan memberi peringatan sebelum masalah terjadi.</p>
+    <button class="btn btn-primary lp-cta" onclick="enterDashboard()">
+      <span id="lpCtaLabel">Lihat Demo Live</span>
+    </button>
+  </div>
+
+  <div class="lp-features">
+    <div class="lp-feature-card">
+      <div class="lp-feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></div>
+      <div class="lp-feature-title" id="lpF1Title">Proaktif, bukan reaktif</div>
+      <div class="lp-feature-desc"  id="lpF1Desc">Kira memantau bisnis Anda 24 jam dan memberi peringatan sebelum masalah terjadi — bukan menunggu Anda bertanya.</div>
+    </div>
+    <div class="lp-feature-card">
+      <div class="lp-feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></div>
+      <div class="lp-feature-title" id="lpF2Title">Baca nota otomatis</div>
+      <div class="lp-feature-desc"  id="lpF2Desc">Cukup foto nota belanja — Mata akan membacanya dan mencatat transaksi secara otomatis.</div>
+    </div>
+    <div class="lp-feature-card">
+      <div class="lp-feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-4.8 7.6 8.5 8.5 0 0 1-8.9-.9L3 21l1.9-4.3a8.38 8.38 0 0 1-.9-3.9 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg></div>
+      <div class="lp-feature-title" id="lpF3Title">Bahasa natural, bukan menu rumit</div>
+      <div class="lp-feature-desc"  id="lpF3Desc">Tanya Kira seperti bicara dengan teman. Tidak perlu belajar menu atau istilah akuntansi.</div>
+    </div>
+  </div>
+
+  <div class="lp-amd">
+    <div class="lp-amd-title" id="lpAmdTitle">Kenapa AMD MI300X?</div>
+    <p class="lp-amd-body" id="lpAmdBody">Reasoning mendalam butuh model besar — 70 miliar parameter — yang tidak bisa berjalan di HP terjangkau. AMD MI300X menjalankan otak analitik Kira di cloud, jadi pemilik warung cukup pakai HP biasa untuk analisis bisnis kelas enterprise.</p>
+  </div>
+</div>
+
 <!-- ══════════════════ SIDEBAR ══════════════════ -->
-<aside class="sidebar">
+<aside class="sidebar" id="sidebar" style="display:none">
 
   <!-- Logo -->
   <div class="sb-logo">
@@ -594,6 +709,10 @@
     <div class="sb-nav-item" data-view="chat" onclick="showView('chat')">
       <span class="sb-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-4.8 7.6 8.5 8.5 0 0 1-8.9-.9L3 21l1.9-4.3a8.38 8.38 0 0 1-.9-3.9 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg></span>
       <span class="sb-nav-label" id="navCh">Chat Kira</span>
+    </div>
+    <div class="sb-nav-item" data-view="manual" onclick="showView('manual')">
+      <span class="sb-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg></span>
+      <span class="sb-nav-label" id="navMn">Catat Data</span>
     </div>
     <div class="sb-nav-item" data-view="alerts" onclick="showView('alerts')">
       <span class="sb-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></span>
@@ -637,7 +756,7 @@
 </aside>
 
 <!-- ══════════════════ MAIN ══════════════════════ -->
-<div class="main">
+<div class="main" id="mainApp" style="display:none">
 
   <!-- Sticky view header -->
   <div class="view-header">
@@ -820,6 +939,52 @@
       </div>
     </div>
 
+    <!-- ══ VIEW — Catat Data (manual entry) ═════════════ -->
+    <div id="view-manual" class="view">
+      <div class="mn-grid">
+
+        <div class="card mn-card">
+          <div class="card-hd">
+            <span class="card-title" id="titleMnSale">Catat Penjualan</span>
+          </div>
+          <div class="mn-body">
+            <label class="mn-label" id="lbMnProduct">Produk</label>
+            <select class="mn-select" id="mnProductSelect" onchange="onMnProductChange()"></select>
+
+            <label class="mn-label" id="lbMnQty">Jumlah Terjual</label>
+            <input class="mn-input" type="number" id="mnQty" min="0" step="any" placeholder="0">
+
+            <label class="mn-label" id="lbMnPrice">Harga per Unit (Rp)</label>
+            <input class="mn-input" type="number" id="mnPrice" min="0" step="any" placeholder="0">
+
+            <button class="btn btn-primary mn-submit" id="mnSaleBtn" onclick="submitTransaction()">
+              <span id="mnSaleBtnLabel">Simpan Penjualan</span>
+            </button>
+            <div class="mn-msg" id="mnSaleMsg"></div>
+          </div>
+        </div>
+
+        <div class="card mn-card">
+          <div class="card-hd">
+            <span class="card-title" id="titleMnStock">Update Stok</span>
+          </div>
+          <div class="mn-body">
+            <label class="mn-label" id="lbMnItem">Item Stok</label>
+            <select class="mn-select" id="mnItemSelect"></select>
+
+            <label class="mn-label" id="lbMnNewStock">Stok Saat Ini (Baru)</label>
+            <input class="mn-input" type="number" id="mnNewStock" min="0" step="any" placeholder="0">
+
+            <button class="btn btn-primary mn-submit" id="mnStockBtn" onclick="submitInventoryUpdate()">
+              <span id="mnStockBtnLabel">Simpan Stok</span>
+            </button>
+            <div class="mn-msg" id="mnStockMsg"></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
     <!-- ══ VIEW 5 — Alerts ══════════════════════════════ -->
     <div id="view-alerts" class="view">
       <div class="alerts-list" id="alertsBody">
@@ -863,6 +1028,7 @@ let _activeView = 'overview';
 let _bizData     = null;
 let _historyData = null;
 let _fcData      = null;
+let _mnProducts  = [];   // {name, unit_price} — populates the Catat Data product dropdown
 
 // Chart instances — destroyed and recreated on business switch
 let salesChartOv = null;
@@ -877,14 +1043,15 @@ let marginChart  = null;
 const T = {
   id: {
     navOv: 'Ringkasan', navAn: 'Analitik', navFc: 'Forecast',
-    navCh: 'Chat Kira', navAl: 'Peringatan',
+    navCh: 'Chat Kira', navMn: 'Catat Data', navAl: 'Peringatan',
     navSectionLabel: 'MENU', usersLabel: 'BISNIS', langLabel: 'Bahasa',
-    vTitle: { overview:'Ringkasan', analytics:'Analitik', forecast:'Forecast', chat:'Chat Kira', alerts:'Peringatan' },
+    vTitle: { overview:'Ringkasan', analytics:'Analitik', forecast:'Forecast', chat:'Chat Kira', manual:'Catat Data', alerts:'Peringatan' },
     vSub:   {
       overview:  'Gambaran umum bisnis Anda hari ini',
       analytics: 'Grafik dan data lengkap',
       forecast:  'Proyeksi bisnis ke depan',
       chat:      'Tanya Kira apa saja',
+      manual:    'Catat penjualan atau perbarui stok secara manual',
       alerts:    'Peringatan proaktif dari Kira',
     },
     lbCash:   'Kas Hari Ini', lbProfit: 'Profit Hari Ini',
@@ -910,17 +1077,38 @@ const T = {
     rcptYes:'Ya, catat', rcptNo:'Tidak', rcptDone:'✅ Dicatat!', rcptSkip:'OK, dilewati.',
     confidence:'Kepercayaan', tierLocal:'Lokal', tierCloud:'Cloud',
     tDown:'TURUN', tUp:'NAIK', tFlat:'STABIL',
+    titleMnSale:'Catat Penjualan', titleMnStock:'Update Stok',
+    lbMnProduct:'Produk', lbMnQty:'Jumlah Terjual', lbMnPrice:'Harga per Unit (Rp)',
+    lbMnItem:'Item Stok', lbMnNewStock:'Stok Saat Ini (Baru)',
+    mnSaleBtnLabel:'Simpan Penjualan', mnStockBtnLabel:'Simpan Stok',
+    mnValidation:'Lengkapi semua data dengan benar.',
+    mnSaving:'Menyimpan…',
+    mnError:'Gagal menyimpan, coba lagi.',
+    mnSaleSuccess:'Penjualan dicatat! Saldo kas baru:',
+    mnStockSuccess:'Stok diperbarui:',
+    lpTagline:'AI co-pilot proaktif untuk 60 juta+ pemilik warung dan UMKM Indonesia',
+    lpExplain:'Kira tidak menunggu ditanya. Enam agen AI khusus — Mata untuk baca nota, Juru Hitung untuk laporan keuangan, Penjaga Stok untuk prediksi kehabisan barang, Strategi untuk rekomendasi harga, dan Suara untuk percakapan natural — bekerja sama memantau bisnis Anda 24 jam dan memberi peringatan sebelum masalah terjadi.',
+    lpCtaLabel:'Lihat Demo Live',
+    lpF1Title:'Proaktif, bukan reaktif',
+    lpF1Desc:'Kira memantau bisnis Anda 24 jam dan memberi peringatan sebelum masalah terjadi — bukan menunggu Anda bertanya.',
+    lpF2Title:'Baca nota otomatis',
+    lpF2Desc:'Cukup foto nota belanja — Mata akan membacanya dan mencatat transaksi secara otomatis.',
+    lpF3Title:'Bahasa natural, bukan menu rumit',
+    lpF3Desc:'Tanya Kira seperti bicara dengan teman. Tidak perlu belajar menu atau istilah akuntansi.',
+    lpAmdTitle:'Kenapa AMD MI300X?',
+    lpAmdBody:'Reasoning mendalam butuh model besar — 70 miliar parameter — yang tidak bisa berjalan di HP terjangkau. AMD MI300X menjalankan otak analitik Kira di cloud, jadi pemilik warung cukup pakai HP biasa untuk analisis bisnis kelas enterprise.',
   },
   en: {
     navOv: 'Overview', navAn: 'Analytics', navFc: 'Forecast',
-    navCh: 'Chat Kira', navAl: 'Alerts',
+    navCh: 'Chat Kira', navMn: 'Manual Entry', navAl: 'Alerts',
     navSectionLabel: 'MENU', usersLabel: 'BUSINESS', langLabel: 'Language',
-    vTitle: { overview:'Overview', analytics:'Analytics', forecast:'Forecast', chat:'Chat Kira', alerts:'Alerts' },
+    vTitle: { overview:'Overview', analytics:'Analytics', forecast:'Forecast', chat:'Chat Kira', manual:'Manual Entry', alerts:'Alerts' },
     vSub:   {
       overview:  'Your business at a glance today',
       analytics: 'Charts and detailed data',
       forecast:  'Business projections',
       chat:      'Ask Kira anything',
+      manual:    'Log a sale or update stock manually',
       alerts:    'Proactive alerts from Kira',
     },
     lbCash:   "Today's Cash", lbProfit: "Today's Profit",
@@ -946,6 +1134,26 @@ const T = {
     rcptYes:'Yes, record', rcptNo:'No thanks', rcptDone:'✅ Recorded!', rcptSkip:'OK, skipped.',
     confidence:'Confidence', tierLocal:'Local', tierCloud:'Cloud',
     tDown:'DECLINING', tUp:'GROWING', tFlat:'STABLE',
+    titleMnSale:'Log a Sale', titleMnStock:'Update Stock',
+    lbMnProduct:'Product', lbMnQty:'Quantity Sold', lbMnPrice:'Price per Unit (Rp)',
+    lbMnItem:'Stock Item', lbMnNewStock:'Current Stock (New)',
+    mnSaleBtnLabel:'Save Sale', mnStockBtnLabel:'Save Stock',
+    mnValidation:'Please fill in all fields correctly.',
+    mnSaving:'Saving…',
+    mnError:'Failed to save, try again.',
+    mnSaleSuccess:'Sale recorded! New cash balance:',
+    mnStockSuccess:'Stock updated:',
+    lpTagline:'The proactive AI co-pilot for 60M+ small shop owners across Indonesia',
+    lpExplain:"Kira doesn't wait to be asked. Six specialist AI agents — Eyes to read receipts, Bookkeeper for financial reports, Stock Guardian to predict stockouts, Strategy for pricing recommendations, and Voice for natural conversation — work together to watch your business 24/7 and warn you before problems happen.",
+    lpCtaLabel:'See Live Demo',
+    lpF1Title:'Proactive, not reactive',
+    lpF1Desc:"Kira watches your business around the clock and warns you before problems happen — instead of waiting for you to ask.",
+    lpF2Title:'Reads receipts automatically',
+    lpF2Desc:'Just snap a photo of a receipt — Eyes reads it and logs the transaction automatically.',
+    lpF3Title:'Natural language, not complex menus',
+    lpF3Desc:"Talk to Kira like a friend. No need to learn menus or accounting jargon.",
+    lpAmdTitle:'Why AMD MI300X?',
+    lpAmdBody:"Deep reasoning needs a large model — 70 billion parameters — that can't run on an affordable phone. AMD MI300X runs Kira's analytical brain in the cloud, so shop owners only need an ordinary phone to get enterprise-grade business analysis.",
   },
 };
 function t(k) { return T[lang][k] !== undefined ? T[lang][k] : k; }
@@ -964,6 +1172,15 @@ function refreshAll() {
   fetchSalesHistory();
   fetchForecast();
   loadAlerts();
+}
+
+/* ═══════════════════════════════════════════════
+   LANDING PAGE → DASHBOARD
+═══════════════════════════════════════════════ */
+function enterDashboard() {
+  document.getElementById('landing').style.display  = 'none';
+  document.getElementById('sidebar').style.display  = '';
+  document.getElementById('mainApp').style.display   = '';
 }
 
 /* ═══════════════════════════════════════════════
@@ -1022,6 +1239,8 @@ function setLang(l) {
   lang = l;
   document.getElementById('btnId').classList.toggle('active', l === 'id');
   document.getElementById('btnEn').classList.toggle('active', l === 'en');
+  const lpId = document.getElementById('lpBtnId'); if (lpId) lpId.classList.toggle('active', l === 'id');
+  const lpEn = document.getElementById('lpBtnEn'); if (lpEn) lpEn.classList.toggle('active', l === 'en');
   _applyStaticLabels();
   // Re-render cached data with new labels (no network calls needed)
   if (_bizData) applyBizUI(_bizData);
@@ -1029,9 +1248,13 @@ function setLang(l) {
 }
 
 function _applyStaticLabels() {
-  const ids = ['navOv','navAn','navFc','navCh','navAl',
+  const ids = ['navOv','navAn','navFc','navCh','navMn','navAl',
                 'navSectionLabel','usersLabel','langLabel',
-                'lbCash','lbProfit','lbStock','lbLosing','insightLabel'];
+                'lbCash','lbProfit','lbStock','lbLosing','insightLabel',
+                'titleMnSale','titleMnStock','lbMnProduct','lbMnQty','lbMnPrice',
+                'lbMnItem','lbMnNewStock','mnSaleBtnLabel','mnStockBtnLabel',
+                'lpTagline','lpExplain','lpCtaLabel','lpF1Title','lpF1Desc',
+                'lpF2Title','lpF2Desc','lpF3Title','lpF3Desc','lpAmdTitle','lpAmdBody'];
   ids.forEach(k => { const el = document.getElementById(k); if (el) el.textContent = t(k); });
 
   // Chart card titles (same key, different element IDs)
@@ -1070,6 +1293,7 @@ function switchUser(newUid) {
     b.classList.toggle('active', b.dataset.uid === newUid)
   );
   _clearChat();
+  _clearMnForms();
   refreshAll();
 }
 
@@ -1133,6 +1357,7 @@ function applyBizUI(d) {
 
   if (d.inventory_items && d.inventory_items.length) renderStockChart(d.inventory_items);
   if (d.product_margins && d.product_margins.length) renderMarginChart(d.product_margins);
+  populateMnForms(d);
 
   // Resize analytics charts if currently visible
   if (_activeView === 'analytics') requestAnimationFrame(() => _resizeViewCharts('analytics'));
@@ -1146,6 +1371,113 @@ function _setMetric(id, val, color, sub) {
   if (ic) ic.className = `metric-icon ${color}`;
   const s = document.getElementById('sub'+id);
   if (s) s.textContent = sub || '';
+}
+
+/* ═══════════════════════════════════════════════
+   CATAT DATA — manual sale / stock entry
+═══════════════════════════════════════════════ */
+function populateMnForms(d) {
+  const productSel = document.getElementById('mnProductSelect');
+  const itemSel    = document.getElementById('mnItemSelect');
+  if (!productSel || !itemSel) return;
+
+  _mnProducts = d.products || [];
+  productSel.innerHTML = _mnProducts
+    .map(p => `<option value="${esc(p.name)}">${esc(p.name)}</option>`).join('');
+  onMnProductChange();
+
+  const items = d.inventory_items || [];
+  itemSel.innerHTML = items
+    .map(i => `<option value="${esc(i.item)}">${esc(i.item)} (${i.stock ?? '—'} ${esc(i.unit||'')})</option>`).join('');
+}
+
+function onMnProductChange() {
+  const productSel = document.getElementById('mnProductSelect');
+  const priceInput = document.getElementById('mnPrice');
+  if (!productSel || !priceInput) return;
+  const p = _mnProducts.find(p => p.name === productSel.value);
+  if (p && p.unit_price != null) priceInput.value = p.unit_price;
+}
+
+function _setMnMsg(id, cls, text) {
+  const el = document.getElementById(id);
+  el.className = cls ? `mn-msg ${cls}` : 'mn-msg';
+  el.textContent = text || '';
+}
+
+async function submitTransaction() {
+  const product = document.getElementById('mnProductSelect').value;
+  const qty     = parseFloat(document.getElementById('mnQty').value);
+  const price   = parseFloat(document.getElementById('mnPrice').value);
+
+  _setMnMsg('mnSaleMsg', '', '');
+  if (!product || !(qty > 0) || !(price > 0)) {
+    _setMnMsg('mnSaleMsg', 'error', t('mnValidation'));
+    return;
+  }
+
+  const btn   = document.getElementById('mnSaleBtn');
+  const label = document.getElementById('mnSaleBtnLabel');
+  const prev  = label.textContent;
+  btn.disabled = true; label.textContent = t('mnSaving');
+
+  try {
+    const r = await fetch(`/transaction/${uid}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ product_name: product, quantity: qty, unit_price: price }),
+    });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.detail || '');
+
+    _setMnMsg('mnSaleMsg', 'success', `${t('mnSaleSuccess')} ${_fmtRp(d.new_cash_balance)}`);
+    document.getElementById('mnQty').value = '';
+    fetchBusiness(); // refresh cached business data in the background
+  } catch (_) {
+    _setMnMsg('mnSaleMsg', 'error', t('mnError'));
+  } finally {
+    btn.disabled = false; label.textContent = prev;
+  }
+}
+
+async function submitInventoryUpdate() {
+  const item  = document.getElementById('mnItemSelect').value;
+  const stock = parseFloat(document.getElementById('mnNewStock').value);
+
+  _setMnMsg('mnStockMsg', '', '');
+  if (!item || !(stock >= 0)) {
+    _setMnMsg('mnStockMsg', 'error', t('mnValidation'));
+    return;
+  }
+
+  const btn   = document.getElementById('mnStockBtn');
+  const label = document.getElementById('mnStockBtnLabel');
+  const prev  = label.textContent;
+  btn.disabled = true; label.textContent = t('mnSaving');
+
+  try {
+    const r = await fetch(`/inventory-update/${uid}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ item_name: item, new_stock_quantity: stock }),
+    });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.detail || '');
+
+    _setMnMsg('mnStockMsg', 'success', `${t('mnStockSuccess')} ${item}`);
+    fetchBusiness(); // refresh cached business data in the background
+  } catch (_) {
+    _setMnMsg('mnStockMsg', 'error', t('mnError'));
+  } finally {
+    btn.disabled = false; label.textContent = prev;
+  }
+}
+
+function _clearMnForms() {
+  const q  = document.getElementById('mnQty');      if (q)  q.value = '';
+  const ns = document.getElementById('mnNewStock'); if (ns) ns.value = '';
+  _setMnMsg('mnSaleMsg', '', '');
+  _setMnMsg('mnStockMsg', '', '');
 }
 
 /* ═══════════════════════════════════════════════
