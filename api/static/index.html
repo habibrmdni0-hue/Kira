@@ -13,7 +13,7 @@
       --sb-text:   #6B6A63;
       --sb-muted:  #B7B6AE;
       --sb-hover:  #F3F2ED;
-      --sb-act-bg: rgba(37,99,235,.08);
+      --sb-act-bg: rgba(37,99,235,.15);
       --sb-accent: #2563EB;
       --bg:        #F7F6F3;
       --card:      #FFFFFF;
@@ -47,15 +47,25 @@
     /* ─────────────────── SIDEBAR ──────────────────────── */
     .sidebar {
       width: var(--sb-w);
-      background: rgba(255,255,255,.7);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border-right: 1px solid rgba(255,255,255,.4);
+      /* Edge-highlight technique: a padding-box fill layer sits over a
+         border-box gradient layer, so the 1px right border reads as a
+         vertical bright-to-faint rim (light catching the glass edge)
+         instead of a flat line — and it still respects border-radius
+         elsewhere in the app since this same trick is reused there. */
+      border: 0; border-right: 1px solid transparent;
+      background:
+        linear-gradient(rgba(255,255,255,.55), rgba(255,255,255,.55)) padding-box,
+        linear-gradient(180deg, rgba(255,255,255,.8), rgba(255,255,255,.15)) border-box;
+      backdrop-filter: blur(24px) saturate(180%);
+      -webkit-backdrop-filter: blur(24px) saturate(180%);
       position: fixed; left: 0; top: 0; bottom: 0;
       display: flex; flex-direction: column;
       z-index: 100;
       overflow-y: auto;
       overflow-x: hidden;
+    }
+    @supports not (backdrop-filter: blur(1px)) {
+      .sidebar { background: rgba(255,255,255,.94); border-right: 1px solid var(--border); }
     }
 
     /* Logo */
@@ -100,14 +110,16 @@
     .sb-nav-item {
       display: flex; align-items: center; gap: 10px;
       padding: 10px 14px; margin: 2px 8px; border-radius: 999px;
-      cursor: pointer; transition: background-color .15s ease, color .15s ease;
+      cursor: pointer; transition: background-color .2s ease, color .2s ease, box-shadow .2s ease;
       color: var(--sb-text); user-select: none;
       position: relative;
     }
     .sb-nav-item:hover { background: var(--sb-hover); color: var(--t1); }
-    /* Soft rounded pill highlight for the active view — blue, not the reference's black */
+    /* Soft rounded pill highlight for the active view — a stronger blue-tinted
+       glass pill with its own edge highlight, still in the glass language */
     .sb-nav-item.active {
       background: var(--sb-act-bg); color: var(--accent);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.6), inset 0 0 0 1px rgba(37,99,235,.18);
     }
     .sb-nav-icon  {
       width: 20px; height: 20px; flex-shrink: 0;
@@ -129,11 +141,14 @@
     .sb-user-item {
       display: flex; align-items: center; gap: 8px;
       padding: 7px 12px; border-radius: 999px; cursor: pointer;
-      transition: background-color .15s ease, color .15s ease; color: var(--sb-text);
+      transition: background-color .2s ease, color .2s ease, box-shadow .2s ease; color: var(--sb-text);
       font-size: 12px; font-weight: 500; user-select: none;
     }
     .sb-user-item:hover { background: var(--sb-hover); color: var(--t1); }
-    .sb-user-item.active { background: var(--sb-act-bg); color: var(--accent); }
+    .sb-user-item.active {
+      background: var(--sb-act-bg); color: var(--accent);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.6), inset 0 0 0 1px rgba(37,99,235,.18);
+    }
     .sb-user-dot {
       width: 6px; height: 6px; border-radius: 50%;
       background: #D9D7CE; flex-shrink: 0; transition: all .15s;
@@ -152,6 +167,14 @@
     }
     .sb-lang-label { font-size: 10px; color: var(--sb-muted); flex: 1; }
     .lang-switch { display: flex; background: var(--bg); border: 1px solid var(--border); border-radius: 999px; padding: 2px; overflow: hidden; }
+    /* Near-layer glass — scoped to the sidebar instance only so the landing
+       page's own ID/EN toggle (same class, shared markup) stays untouched. */
+    .sb-bottom .lang-switch {
+      background: rgba(255,255,255,.8);
+      backdrop-filter: blur(8px) saturate(150%);
+      -webkit-backdrop-filter: blur(8px) saturate(150%);
+      border: 1px solid rgba(255,255,255,.6);
+    }
     .lang-btn {
       padding: 4px 11px; font-size: 11px; font-weight: 600;
       cursor: pointer; color: var(--t3); border-radius: 999px;
@@ -159,15 +182,21 @@
     }
     .lang-btn.active { background: var(--t1); color: #fff; }
     .amd-btn {
-      background: #ECFDF5; color: #047857; border: 1px solid #BBEBD5; cursor: pointer;
+      background: rgba(236,253,245,.85); color: #047857; border: 1px solid rgba(187,235,213,.7); cursor: pointer;
       padding: 8px 12px; border-radius: 999px;
       font-size: 11px; font-weight: 700; letter-spacing: .3px;
       width: 100%; text-align: left; font-family: inherit;
+      backdrop-filter: blur(8px) saturate(150%);
+      -webkit-backdrop-filter: blur(8px) saturate(150%);
       transition: opacity .15s ease;
       display: flex; align-items: center; gap: 7px;
     }
     .amd-btn svg { width: 14px; height: 14px; stroke: currentColor; flex-shrink: 0; }
     .amd-btn:hover { opacity: .75; }
+    @supports not (backdrop-filter: blur(1px)) {
+      .sb-bottom .lang-switch { background: rgba(255,255,255,.95); }
+      .amd-btn { background: #ECFDF5; }
+    }
     .sb-mode { font-size: 10px; color: var(--sb-muted); line-height: 1.5; }
 
     /* ─────────────────── MAIN ─────────────────────────── */
@@ -179,8 +208,10 @@
       position: relative;
     }
 
-    /* Soft color blooms behind the glass cards — fixed so they don't scroll,
-       confined to the main content area (never spills under the sidebar). */
+    /* Soft color blooms behind the glass cards — the color field the glass
+       actually refracts. Fixed so they don't scroll, confined to the main
+       content area (never spills under the sidebar). Blue accent + one warm
+       neutral (amber, already in the palette) only — no invented hues. */
     .dash-bg {
       position: fixed; top: 0; bottom: 0;
       left: var(--sb-w); right: 0;
@@ -188,11 +219,23 @@
     }
     .dash-blob {
       position: absolute; border-radius: 50%;
-      filter: blur(90px);
+      filter: blur(120px);
     }
-    .dash-blob-1 { width: 480px; height: 480px; top: -140px;  left: -100px; background: var(--accent); opacity: .18; }
-    .dash-blob-2 { width: 520px; height: 520px; bottom: -180px; right: 4%;  background: #06B6D4;       opacity: .16; }
-    .dash-blob-3 { width: 380px; height: 380px; top: 38%;      left: 52%;   background: var(--accent); opacity: .12; }
+    .dash-blob-1 {
+      width: 560px; height: 560px; top: -160px; left: -140px;
+      background: radial-gradient(circle, var(--accent) 0%, transparent 72%);
+      opacity: .28;
+    }
+    .dash-blob-2 {
+      width: 600px; height: 600px; bottom: -200px; right: -60px;
+      background: radial-gradient(circle, var(--amber) 0%, transparent 72%);
+      opacity: .24;
+    }
+    .dash-blob-3 {
+      width: 420px; height: 420px; top: 30%; left: 56%;
+      background: radial-gradient(circle, var(--accent) 0%, transparent 72%);
+      opacity: .20;
+    }
 
     /* Sticky view header */
     .view-header {
@@ -210,15 +253,17 @@
     .vh-actions { display: flex; gap: 8px; align-items: center; }
 
     /* View content — sits above the blob layer.
-       Locally darkens --t2/--t3 a touch for legibility against the frosted
-       glass cards; scoped here only, so the landing page and sidebar are
-       unaffected. */
+       Locally darkens --t2/--t3 for legibility against the frosted glass
+       cards (roughly equivalent to rgba(0,0,0,.75) on white); scoped here
+       only, so the landing page and sidebar are unaffected. Headlines and
+       numbers already use --t1 at full opacity and are never glassed
+       themselves — only their container is. */
     .view-content {
       flex: 1; padding: 18px 22px 28px;
       overflow-y: auto;
       position: relative; z-index: 1;
-      --t2: #56554E;
-      --t3: #6E6C63;
+      --t2: #3F3E38;
+      --t3: #57564E;
     }
     .view-content.no-scroll { overflow: hidden; padding-bottom: 0; }
 
@@ -231,7 +276,7 @@
     .card {
       background: var(--card); border-radius: var(--r);
       border: 1px solid var(--border); box-shadow: var(--sh);
-      transition: border-color .15s ease, transform .15s ease, box-shadow .15s ease;
+      transition: border-color .2s ease, transform .2s ease, box-shadow .2s ease;
     }
     .card:hover {
       border-color: #D8D6CE;
@@ -239,53 +284,105 @@
       box-shadow: var(--sh-hover);
     }
 
-    /* ─────────────────── GLASSMORPHISM (dashboard only) ─── */
-    .glass-card {
-      background: rgba(255,255,255,.55);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      border: 1px solid rgba(255,255,255,.5);
-      box-shadow: 0 8px 32px rgba(31,38,135,.08);
-      border-radius: 20px;
-    }
-    .glass-card:hover { border-color: rgba(255,255,255,.75); }
+    /* ═══════════════════════════════════════════════════════
+       LIQUID GLASS (dashboard only — landing keeps its own style)
 
-    /* Dark "hero" variant — reserved for the single most urgent metric card,
-       chosen dynamically in JS (see _updateHeroCard). */
-    .glass-card-dark {
-      background: rgba(20,20,30,.75);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      border: 1px solid rgba(255,255,255,.1);
-      box-shadow: 0 8px 32px rgba(0,0,0,.2);
+       Three things separate this from flat glassmorphism:
+       1. saturate() paired with every blur() — makes the color field
+          behind the glass read as vivid, not washed out.
+       2. An edge highlight: two background layers (fill clipped to
+          padding-box, a bright-to-faint gradient clipped to border-box)
+          instead of border-image, because border-image ignores
+          border-radius and would square off every rounded corner in
+          the app. This gives the same "light catching the rim" look
+          while staying pill/rounded-corner compatible everywhere.
+       3. Layered blur intensity by distance: far (blobs, 120px) →
+          mid (cards, 20px) → near (badges/pills/buttons, 8px), each
+          with its own opacity, so nested glass reads as depth rather
+          than one flat translucent layer repeated everywhere.
+    ═══════════════════════════════════════════════════════ */
+    .glass-card {
+      position: relative;
+      border: 1px solid transparent;
       border-radius: 20px;
-      color: #fff;
+      background:
+        linear-gradient(rgba(255,255,255,.65), rgba(255,255,255,.65)) padding-box,
+        linear-gradient(180deg, rgba(255,255,255,.85), rgba(255,255,255,.15)) border-box;
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      box-shadow:
+        inset 0 1px 1px rgba(255,255,255,.5),
+        0 8px 32px rgba(37,99,235,.08);
+      transition: box-shadow .2s ease, transform .2s ease, backdrop-filter .2s ease;
     }
-    .glass-card-dark:hover { border-color: rgba(255,255,255,.22); }
-    .glass-card-dark .metric-label { color: rgba(255,255,255,.6); }
-    .glass-card-dark .metric-sub   { color: rgba(255,255,255,.55); }
-    .glass-card-dark .metric-value { color: #fff; }
-    .glass-card-dark .metric-value.ok     { color: #4ADE80; }
-    .glass-card-dark .metric-value.warn   { color: #FBBF24; }
-    .glass-card-dark .metric-value.danger { color: #F87171; }
-    .glass-card-dark .metric-icon { background: rgba(255,255,255,.12); color: rgba(255,255,255,.85); }
-    .glass-card-dark .metric-icon.ok     { background: rgba(74,222,128,.16);  color: #4ADE80; }
-    .glass-card-dark .metric-icon.warn   { background: rgba(251,191,36,.16);  color: #FBBF24; }
-    .glass-card-dark .metric-icon.danger { background: rgba(248,113,113,.16); color: #F87171; }
+    .glass-card:hover {
+      transform: translateY(-2px);
+      backdrop-filter: blur(20px) saturate(210%);
+      -webkit-backdrop-filter: blur(20px) saturate(210%);
+      box-shadow:
+        inset 0 1px 1px rgba(255,255,255,.6),
+        0 14px 40px rgba(37,99,235,.14);
+    }
+    @supports not (backdrop-filter: blur(1px)) {
+      .glass-card { background: rgba(255,255,255,.92); border: 1px solid var(--border); }
+    }
+
+    /* Blue-tinted glass — marks the single most critical metric card
+       (chosen dynamically in JS, see _updateHeroCard). Still reads as
+       glass: same light background family, just warmer/more saturated,
+       never dark or opaque. */
+    .glass-card-tint {
+      position: relative;
+      border: 1px solid transparent;
+      border-radius: 20px;
+      background:
+        linear-gradient(rgba(37,99,235,.12), rgba(37,99,235,.12)) padding-box,
+        linear-gradient(rgba(255,255,255,.55), rgba(255,255,255,.55)) padding-box,
+        linear-gradient(180deg, rgba(147,183,255,.9), rgba(37,99,235,.3)) border-box;
+      backdrop-filter: blur(20px) saturate(200%);
+      -webkit-backdrop-filter: blur(20px) saturate(200%);
+      box-shadow:
+        inset 0 1px 1px rgba(255,255,255,.5),
+        0 8px 32px rgba(37,99,235,.18);
+      transition: box-shadow .2s ease, transform .2s ease, backdrop-filter .2s ease;
+    }
+    .glass-card-tint:hover {
+      transform: translateY(-2px);
+      backdrop-filter: blur(20px) saturate(230%);
+      -webkit-backdrop-filter: blur(20px) saturate(230%);
+      box-shadow:
+        inset 0 1px 1px rgba(255,255,255,.6),
+        0 14px 40px rgba(37,99,235,.26);
+    }
+    @supports not (backdrop-filter: blur(1px)) {
+      .glass-card-tint { background: rgba(219,234,254,.92); border: 1px solid rgba(37,99,235,.3); }
+    }
 
     .card-hd {
       display: flex; align-items: center; justify-content: space-between;
       padding: 16px 20px 10px;
     }
+    /* Near-layer glass: less blur, higher opacity than the cards they sit
+       inside — this is what makes them read as closer/more solid. */
     .card-title {
       display: inline-block;
       font-size: 11px; font-weight: 600; text-transform: uppercase;
       letter-spacing: .8px; color: var(--t2);
-      background: var(--bg); border-radius: 999px; padding: 4px 11px;
+      background: rgba(255,255,255,.8);
+      backdrop-filter: blur(8px) saturate(150%);
+      -webkit-backdrop-filter: blur(8px) saturate(150%);
+      border: 1px solid rgba(255,255,255,.6);
+      border-radius: 999px; padding: 4px 11px;
     }
     .badge {
       font-size: 10px; color: var(--t3); font-weight: 600;
-      background: var(--bg); border: 1px solid var(--border); border-radius: 999px; padding: 3px 9px;
+      background: rgba(255,255,255,.8);
+      backdrop-filter: blur(8px) saturate(150%);
+      -webkit-backdrop-filter: blur(8px) saturate(150%);
+      border: 1px solid rgba(255,255,255,.6); border-radius: 999px; padding: 3px 9px;
+    }
+    @supports not (backdrop-filter: blur(1px)) {
+      .card-title, .badge { background: rgba(255,255,255,.95); }
     }
 
     /* ─────────────────── VIEW 1: Overview ─────────────── */
@@ -364,7 +461,10 @@
     .ov-fc-summary { flex: 1; min-width: 160px; }
     .ov-fc-sum-text {
       font-size: 12px; color: var(--t1); line-height: 1.65;
-      background: var(--bg); border-radius: 8px; padding: 10px 12px;
+      background: rgba(255,255,255,.8);
+      backdrop-filter: blur(8px) saturate(150%);
+      -webkit-backdrop-filter: blur(8px) saturate(150%);
+      border-radius: 8px; padding: 10px 12px;
     }
 
     /* Insight of the day — surfaces the most urgent alert on the overview */
@@ -436,7 +536,13 @@
     }
     .fc-sum-text {
       font-size: 13px; color: var(--t1); line-height: 1.65;
-      background: var(--bg); border-radius: 10px; padding: 12px 14px;
+      background: rgba(255,255,255,.8);
+      backdrop-filter: blur(8px) saturate(150%);
+      -webkit-backdrop-filter: blur(8px) saturate(150%);
+      border-radius: 10px; padding: 12px 14px;
+    }
+    @supports not (backdrop-filter: blur(1px)) {
+      .fc-sum-text, .ov-fc-sum-text { background: rgba(255,255,255,.95); }
     }
     .trend-chip {
       display: inline-flex; align-items: center;
@@ -482,9 +588,14 @@
       30%          { transform: translateY(-6px); }
     }
     .chat-input-row {
-      padding: 10px 14px; border-top: 1px solid var(--border);
+      padding: 10px 14px; border-top: 1px solid rgba(255,255,255,.5);
       display: flex; gap: 8px; align-items: flex-end; flex-shrink: 0;
-      background: var(--card);
+      background: rgba(255,255,255,.8);
+      backdrop-filter: blur(8px) saturate(150%);
+      -webkit-backdrop-filter: blur(8px) saturate(150%);
+    }
+    @supports not (backdrop-filter: blur(1px)) {
+      .chat-input-row { background: rgba(255,255,255,.95); }
     }
     .chat-input {
       flex: 1; border: 1px solid var(--border); border-radius: 10px;
@@ -531,10 +642,15 @@
 
     .alert-hd {
       padding: 10px 16px;
-      background: var(--bg);
+      background: rgba(255,255,255,.8);
+      backdrop-filter: blur(8px) saturate(150%);
+      -webkit-backdrop-filter: blur(8px) saturate(150%);
       border-radius: 19px 19px 0 0;
       display: flex; align-items: center; gap: 8px;
-      border-bottom: 1px solid var(--border);
+      border-bottom: 1px solid rgba(255,255,255,.5);
+    }
+    @supports not (backdrop-filter: blur(1px)) {
+      .alert-hd { background: rgba(255,255,255,.95); }
     }
     .alert-cat  {
       font-size: 9px; font-weight: 600; text-transform: uppercase;
@@ -580,16 +696,29 @@
     .btn:hover:not(:disabled) { opacity: .82; }
     .btn:disabled { opacity: .45; cursor: not-allowed; }
     .btn-primary   { background: var(--accent); color: #fff; }
-    .btn-secondary { background: var(--bg); color: var(--t1); border: 1px solid var(--border); }
-    .btn-secondary:hover:not(:disabled) { background: #EFEEE8; opacity: 1; }
+    /* Buttons/pills are near-layer glass too — less blur, higher opacity
+       than the cards they sit on, so they feel tactile and solid. */
+    .btn-secondary {
+      background: rgba(255,255,255,.8);
+      backdrop-filter: blur(8px) saturate(150%);
+      -webkit-backdrop-filter: blur(8px) saturate(150%);
+      color: var(--t1); border: 1px solid rgba(255,255,255,.6);
+    }
+    .btn-secondary:hover:not(:disabled) { background: rgba(255,255,255,.95); opacity: 1; }
     .btn-icon      {
-      background: var(--bg); color: var(--t1); padding: 8px 10px; font-size: 16px;
-      border-radius: 100px; border: 1px solid var(--border); cursor: pointer;
+      background: rgba(255,255,255,.8);
+      backdrop-filter: blur(8px) saturate(150%);
+      -webkit-backdrop-filter: blur(8px) saturate(150%);
+      color: var(--t1); padding: 8px 10px; font-size: 16px;
+      border-radius: 100px; border: 1px solid rgba(255,255,255,.6); cursor: pointer;
       transition: background-color .15s ease, border-color .15s ease;
     }
-    .btn-icon:hover { background: #EFEEE8; border-color: #D8D6CE; }
+    .btn-icon:hover { background: rgba(255,255,255,.95); border-color: rgba(255,255,255,.8); }
     .btn-sm        { padding: 5px 12px; font-size: 11px; }
     .btn-confirm   { background: #059669; color: #fff; }
+    @supports not (backdrop-filter: blur(1px)) {
+      .btn-secondary, .btn-icon { background: rgba(255,255,255,.95); }
+    }
 
     /* ─────────────────── AMD Modal ─────────────────────── */
     .overlay {
@@ -1624,7 +1753,8 @@ function _setMetric(id, val, color, sub) {
 
 /* ═══════════════════════════════════════════════
    HERO GLASS CARD — dynamically pick the single most
-   critical metric card and give it the dark glass treatment.
+   critical metric card and give it the blue-tinted glass treatment
+   (never dark/opaque — it still has to read as glass).
 
    Two signals, both already present in data we've fetched:
    1. Each metric's own status tier (danger/warn/ok), computed in
@@ -1662,7 +1792,7 @@ function _updateHeroCard() {
     const card = document.getElementById('card' + id);
     if (!card) return;
     const isHero = id === bestId && bestScore > 0; // never force a hero when everything is healthy
-    card.classList.toggle('glass-card-dark', isHero);
+    card.classList.toggle('glass-card-tint', isHero);
     card.classList.toggle('glass-card', !isHero);
   });
 }
