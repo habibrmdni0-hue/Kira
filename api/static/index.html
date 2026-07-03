@@ -20,7 +20,7 @@
       --border:    #E8E7E1;
       --sh:        none;
       --sh-hover:  0 8px 24px rgba(20,20,18,.06);
-      --r:         18px;
+      --r:         20px;
       --accent:    #2563EB;
       --accent-light: rgba(37,99,235,.08);
       --green:    #10B981;
@@ -47,8 +47,10 @@
     /* ─────────────────── SIDEBAR ──────────────────────── */
     .sidebar {
       width: var(--sb-w);
-      background: var(--sb-bg);
-      border-right: 1px solid var(--border);
+      background: rgba(255,255,255,.7);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-right: 1px solid rgba(255,255,255,.4);
       position: fixed; left: 0; top: 0; bottom: 0;
       display: flex; flex-direction: column;
       z-index: 100;
@@ -97,20 +99,15 @@
     }
     .sb-nav-item {
       display: flex; align-items: center; gap: 10px;
-      padding: 10px 14px; margin: 2px 8px; border-radius: 10px;
+      padding: 10px 14px; margin: 2px 8px; border-radius: 999px;
       cursor: pointer; transition: background-color .15s ease, color .15s ease;
       color: var(--sb-text); user-select: none;
       position: relative;
     }
     .sb-nav-item:hover { background: var(--sb-hover); color: var(--t1); }
+    /* Soft rounded pill highlight for the active view — blue, not the reference's black */
     .sb-nav-item.active {
       background: var(--sb-act-bg); color: var(--accent);
-    }
-    .sb-nav-item.active::before {
-      content: '';
-      position: absolute; left: -8px; top: 50%; transform: translateY(-50%);
-      width: 3px; height: 18px; border-radius: 0 3px 3px 0;
-      background: var(--sb-accent);
     }
     .sb-nav-icon  {
       width: 20px; height: 20px; flex-shrink: 0;
@@ -131,7 +128,7 @@
     }
     .sb-user-item {
       display: flex; align-items: center; gap: 8px;
-      padding: 7px 12px; border-radius: 8px; cursor: pointer;
+      padding: 7px 12px; border-radius: 999px; cursor: pointer;
       transition: background-color .15s ease, color .15s ease; color: var(--sb-text);
       font-size: 12px; font-weight: 500; user-select: none;
     }
@@ -179,7 +176,23 @@
       flex: 1;
       display: flex; flex-direction: column;
       min-height: 100vh;
+      position: relative;
     }
+
+    /* Soft color blooms behind the glass cards — fixed so they don't scroll,
+       confined to the main content area (never spills under the sidebar). */
+    .dash-bg {
+      position: fixed; top: 0; bottom: 0;
+      left: var(--sb-w); right: 0;
+      overflow: hidden; pointer-events: none; z-index: 0;
+    }
+    .dash-blob {
+      position: absolute; border-radius: 50%;
+      filter: blur(90px);
+    }
+    .dash-blob-1 { width: 480px; height: 480px; top: -140px;  left: -100px; background: var(--accent); opacity: .18; }
+    .dash-blob-2 { width: 520px; height: 520px; bottom: -180px; right: 4%;  background: #06B6D4;       opacity: .16; }
+    .dash-blob-3 { width: 380px; height: 380px; top: 38%;      left: 52%;   background: var(--accent); opacity: .12; }
 
     /* Sticky view header */
     .view-header {
@@ -196,10 +209,16 @@
     .vh-sub   { font-size: 11px; color: var(--t3); margin-top: 1px; }
     .vh-actions { display: flex; gap: 8px; align-items: center; }
 
-    /* View content */
+    /* View content — sits above the blob layer.
+       Locally darkens --t2/--t3 a touch for legibility against the frosted
+       glass cards; scoped here only, so the landing page and sidebar are
+       unaffected. */
     .view-content {
       flex: 1; padding: 18px 22px 28px;
       overflow-y: auto;
+      position: relative; z-index: 1;
+      --t2: #56554E;
+      --t3: #6E6C63;
     }
     .view-content.no-scroll { overflow: hidden; padding-bottom: 0; }
 
@@ -219,6 +238,41 @@
       transform: translateY(-2px);
       box-shadow: var(--sh-hover);
     }
+
+    /* ─────────────────── GLASSMORPHISM (dashboard only) ─── */
+    .glass-card {
+      background: rgba(255,255,255,.55);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255,255,255,.5);
+      box-shadow: 0 8px 32px rgba(31,38,135,.08);
+      border-radius: 20px;
+    }
+    .glass-card:hover { border-color: rgba(255,255,255,.75); }
+
+    /* Dark "hero" variant — reserved for the single most urgent metric card,
+       chosen dynamically in JS (see _updateHeroCard). */
+    .glass-card-dark {
+      background: rgba(20,20,30,.75);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255,255,255,.1);
+      box-shadow: 0 8px 32px rgba(0,0,0,.2);
+      border-radius: 20px;
+      color: #fff;
+    }
+    .glass-card-dark:hover { border-color: rgba(255,255,255,.22); }
+    .glass-card-dark .metric-label { color: rgba(255,255,255,.6); }
+    .glass-card-dark .metric-sub   { color: rgba(255,255,255,.55); }
+    .glass-card-dark .metric-value { color: #fff; }
+    .glass-card-dark .metric-value.ok     { color: #4ADE80; }
+    .glass-card-dark .metric-value.warn   { color: #FBBF24; }
+    .glass-card-dark .metric-value.danger { color: #F87171; }
+    .glass-card-dark .metric-icon { background: rgba(255,255,255,.12); color: rgba(255,255,255,.85); }
+    .glass-card-dark .metric-icon.ok     { background: rgba(74,222,128,.16);  color: #4ADE80; }
+    .glass-card-dark .metric-icon.warn   { background: rgba(251,191,36,.16);  color: #FBBF24; }
+    .glass-card-dark .metric-icon.danger { background: rgba(248,113,113,.16); color: #F87171; }
+
     .card-hd {
       display: flex; align-items: center; justify-content: space-between;
       padding: 16px 20px 10px;
@@ -466,7 +520,7 @@
     .alert-card {
       border: 1px solid var(--border);
       border-left: 4px solid var(--border);
-      border-radius: 12px;
+      border-radius: 20px;
       /* No overflow:hidden, no max-height — let content expand freely */
       background: var(--card);
       box-shadow: var(--sh);
@@ -478,7 +532,7 @@
     .alert-hd {
       padding: 10px 16px;
       background: var(--bg);
-      border-radius: 11px 11px 0 0;
+      border-radius: 19px 19px 0 0;
       display: flex; align-items: center; gap: 8px;
       border-bottom: 1px solid var(--border);
     }
@@ -518,7 +572,7 @@
 
     /* ─────────────────── Shared buttons ────────────────── */
     .btn {
-      padding: 8px 14px; border-radius: 8px; border: none;
+      padding: 8px 14px; border-radius: 100px; border: none;
       cursor: pointer; font-size: 12px; font-weight: 600;
       font-family: inherit; transition: opacity .15s; white-space: nowrap;
       display: inline-flex; align-items: center; justify-content: center;
@@ -530,7 +584,7 @@
     .btn-secondary:hover:not(:disabled) { background: #EFEEE8; opacity: 1; }
     .btn-icon      {
       background: var(--bg); color: var(--t1); padding: 8px 10px; font-size: 16px;
-      border-radius: 8px; border: 1px solid var(--border); cursor: pointer;
+      border-radius: 100px; border: 1px solid var(--border); cursor: pointer;
       transition: background-color .15s ease, border-color .15s ease;
     }
     .btn-icon:hover { background: #EFEEE8; border-color: #D8D6CE; }
@@ -919,6 +973,13 @@
 <!-- ══════════════════ MAIN ══════════════════════ -->
 <div class="main" id="mainApp" style="display:none">
 
+  <!-- Soft color blooms for the glass cards to catch — purely decorative -->
+  <div class="dash-bg" aria-hidden="true">
+    <div class="dash-blob dash-blob-1"></div>
+    <div class="dash-blob dash-blob-2"></div>
+    <div class="dash-blob dash-blob-3"></div>
+  </div>
+
   <!-- Sticky view header -->
   <div class="view-header">
     <div>
@@ -934,9 +995,10 @@
     <!-- ══ VIEW 1 — Overview (default) ═════════════════ -->
     <div id="view-overview" class="view active">
 
-      <!-- 4 metric cards -->
+      <!-- 4 metric cards — the most critical one becomes the dark "hero" glass
+           card dynamically at runtime (see _updateHeroCard in the script). -->
       <div class="ov-metrics">
-        <div class="card metric-card" id="cardCash">
+        <div class="card metric-card glass-card" id="cardCash">
           <div class="metric-icon" id="iconCash"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/><path d="M18 12a2 2 0 0 0 0 4h4v-4z"/></svg></div>
           <div class="metric-body">
             <div class="metric-label" id="lbCash">Kas Hari Ini</div>
@@ -944,7 +1006,7 @@
             <div class="metric-sub"   id="subCash"></div>
           </div>
         </div>
-        <div class="card metric-card" id="cardProfit">
+        <div class="card metric-card glass-card" id="cardProfit">
           <div class="metric-icon" id="iconProfit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 18 8.5 10.5 13.5 15.5 23 6"/><polyline points="17 6 23 6 23 12"/></svg></div>
           <div class="metric-body">
             <div class="metric-label" id="lbProfit">Profit Hari Ini</div>
@@ -952,7 +1014,7 @@
             <div class="metric-sub"   id="subProfit"></div>
           </div>
         </div>
-        <div class="card metric-card" id="cardStock">
+        <div class="card metric-card glass-card" id="cardStock">
           <div class="metric-icon" id="iconStock"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4a2 2 0 0 0 1-1.73z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></div>
           <div class="metric-body">
             <div class="metric-label" id="lbStock">Stok Kritis</div>
@@ -960,7 +1022,7 @@
             <div class="metric-sub"   id="subStock"></div>
           </div>
         </div>
-        <div class="card metric-card" id="cardLosing">
+        <div class="card metric-card glass-card" id="cardLosing">
           <div class="metric-icon" id="iconLosing"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></svg></div>
           <div class="metric-body">
             <div class="metric-label" id="lbLosing">Produk Merugi</div>
@@ -972,7 +1034,7 @@
 
       <!-- 30-day sales + runway -->
       <div class="ov-row2">
-        <div class="card">
+        <div class="card glass-card">
           <div class="card-hd">
             <span class="card-title" id="titleSalesOv">Tren Penjualan 30 Hari</span>
             <span class="badge" id="badgeSalesOv">—</span>
@@ -981,7 +1043,7 @@
             <div class="h160"><canvas id="salesCanvasOv"></canvas></div>
           </div>
         </div>
-        <div class="card">
+        <div class="card glass-card">
           <div class="card-hd">
             <span class="card-title" id="titleRunway">Cash Runway</span>
           </div>
@@ -999,7 +1061,7 @@
       </div>
 
       <!-- Compact forecast summary -->
-      <div class="card">
+      <div class="card glass-card">
         <div class="card-hd">
           <span class="card-title" id="titleOvFc">Ringkasan Forecast</span>
         </div>
@@ -1009,7 +1071,7 @@
       </div>
 
       <!-- Insight of the day — most urgent active alert -->
-      <div class="card insight-card" id="insightCard" style="display:none">
+      <div class="card insight-card glass-card" id="insightCard" style="display:none">
         <div class="insight-icon" id="insightIcon">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
         </div>
@@ -1027,7 +1089,7 @@
       <div class="an-grid">
 
         <!-- Full sales line chart -->
-        <div class="card">
+        <div class="card glass-card">
           <div class="card-hd">
             <span class="card-title" id="titleSalesAn">Tren Penjualan 30 Hari</span>
             <span class="badge" id="badgeSalesAn">—</span>
@@ -1039,7 +1101,7 @@
 
         <!-- Stock + Margin side by side -->
         <div class="an-row2">
-          <div class="card">
+          <div class="card glass-card">
             <div class="card-hd">
               <span class="card-title" id="titleStockAn">Stok per Item</span>
               <span class="badge" id="badgeStockAn">—</span>
@@ -1048,7 +1110,7 @@
               <div class="h200"><canvas id="stockCanvas"></canvas></div>
             </div>
           </div>
-          <div class="card">
+          <div class="card glass-card">
             <div class="card-hd">
               <span class="card-title" id="titleMarginAn">Margin per Produk</span>
               <span class="badge" id="badgeMarginAn">—</span>
@@ -1064,7 +1126,7 @@
 
     <!-- ══ VIEW 3 — Forecast ════════════════════════════ -->
     <div id="view-forecast" class="view">
-      <div class="card fc-card">
+      <div class="card fc-card glass-card">
         <div class="fc-hd">
           <span class="card-title" id="titleFcView">Forecast Bisnis</span>
           <span class="live-pill">live data</span>
@@ -1077,7 +1139,7 @@
 
     <!-- ══ VIEW 4 — Chat ════════════════════════════════ -->
     <div id="view-chat" class="view">
-      <div class="card chat-card">
+      <div class="card chat-card glass-card">
         <div class="chat-body" id="chatBody">
           <div class="empty-state" id="chatEmpty">
             <div style="font-size:36px;margin-bottom:12px">💬</div>
@@ -1104,7 +1166,7 @@
     <div id="view-manual" class="view">
       <div class="mn-grid">
 
-        <div class="card mn-card">
+        <div class="card mn-card glass-card">
           <div class="card-hd">
             <span class="card-title" id="titleMnSale">Catat Penjualan</span>
           </div>
@@ -1125,7 +1187,7 @@
           </div>
         </div>
 
-        <div class="card mn-card">
+        <div class="card mn-card glass-card">
           <div class="card-hd">
             <span class="card-title" id="titleMnStock">Update Stok</span>
           </div>
@@ -1190,6 +1252,7 @@ let _bizData     = null;
 let _historyData = null;
 let _fcData      = null;
 let _mnProducts  = [];   // {name, unit_price} — populates the Catat Data product dropdown
+let _alertsData  = [];   // latest /proactive alerts — used to pick the hero glass metric card
 
 // Chart instances — destroyed and recreated on business switch
 let salesChartOv = null;
@@ -1472,7 +1535,7 @@ function _applyStaticLabels() {
 ═══════════════════════════════════════════════ */
 function switchUser(newUid) {
   uid = newUid;
-  _bizData = null; _historyData = null; _fcData = null;
+  _bizData = null; _historyData = null; _fcData = null; _alertsData = [];
 
   document.querySelectorAll('.sb-user-item').forEach(b =>
     b.classList.toggle('active', b.dataset.uid === newUid)
@@ -1543,19 +1606,65 @@ function applyBizUI(d) {
   if (d.inventory_items && d.inventory_items.length) renderStockChart(d.inventory_items);
   if (d.product_margins && d.product_margins.length) renderMarginChart(d.product_margins);
   populateMnForms(d);
+  _updateHeroCard();
 
   // Resize analytics charts if currently visible
   if (_activeView === 'analytics') requestAnimationFrame(() => _resizeViewCharts('analytics'));
 }
 
 function _setMetric(id, val, color, sub) {
-  document.getElementById('card'+id).className = `card metric-card`;
+  document.getElementById('card'+id).className = `card metric-card glass-card`;
   const v = document.getElementById('val'+id);
   v.textContent = val; v.className = `metric-value ${color}`;
   const ic = document.getElementById('icon'+id);
   if (ic) ic.className = `metric-icon ${color}`;
   const s = document.getElementById('sub'+id);
   if (s) s.textContent = sub || '';
+}
+
+/* ═══════════════════════════════════════════════
+   HERO GLASS CARD — dynamically pick the single most
+   critical metric card and give it the dark glass treatment.
+
+   Two signals, both already present in data we've fetched:
+   1. Each metric's own status tier (danger/warn/ok), computed in
+      applyBizUI() from the business KPIs — this is the primary signal.
+   2. The severity_score of any /proactive alert whose category maps
+      to that metric — used to break ties within the same tier, so
+      the hero still reflects real alert urgency, not just thresholds.
+
+   Re-run after every applyBizUI() (business data) and loadAlerts()
+   (alert data) — whichever resolves last ends up with both signals.
+═══════════════════════════════════════════════ */
+const HERO_METRIC_IDS = ['Cash', 'Stock', 'Losing', 'Profit'];
+const HERO_CATEGORY_MAP = { Cash: 'finance', Stock: 'inventory', Losing: 'strategy', Profit: 'finance' };
+const HERO_TIER_RANK = { danger: 2, warn: 1, ok: 0 };
+
+function _updateHeroCard() {
+  let bestId = null, bestScore = -1;
+
+  HERO_METRIC_IDS.forEach(id => {
+    const valEl = document.getElementById('val' + id);
+    if (!valEl) return;
+    const tierMatch = valEl.className.match(/\b(danger|warn|ok)\b/);
+    const tier = tierMatch ? HERO_TIER_RANK[tierMatch[1]] : 0;
+
+    const cat = HERO_CATEGORY_MAP[id];
+    const alertBoost = _alertsData
+      .filter(a => a.category === cat)
+      .reduce((max, a) => Math.max(max, a.severity_score || 0), 0);
+
+    const score = tier * 1000 + alertBoost;
+    if (score > bestScore) { bestScore = score; bestId = id; }
+  });
+
+  HERO_METRIC_IDS.forEach(id => {
+    const card = document.getElementById('card' + id);
+    if (!card) return;
+    const isHero = id === bestId && bestScore > 0; // never force a hero when everything is healthy
+    card.classList.toggle('glass-card-dark', isHero);
+    card.classList.toggle('glass-card', !isHero);
+  });
 }
 
 /* ═══════════════════════════════════════════════
@@ -1946,10 +2055,12 @@ async function loadAlerts() {
   try {
     const d = await (await fetch(`/proactive/${uid}`)).json();
     const alerts = d.alerts || [];
+    _alertsData = alerts;
     body.innerHTML = alerts.length
       ? alerts.map(_renderAlert).join('')
       : `<div class="empty-state">${esc(t('noAlerts'))}</div>`;
     renderInsightCard(alerts);
+    _updateHeroCard();
   } catch (_) {
     body.innerHTML = `<div class="empty-state" style="color:var(--red)">${esc(t('errMsg'))}</div>`;
   }
@@ -1968,7 +2079,7 @@ function renderInsightCard(alerts) {
   )[0];
   const az = top.analysis || {};
 
-  card.className = `card insight-card ${esc(top.severity || '')}`;
+  card.className = `card insight-card glass-card ${esc(top.severity || '')}`;
   document.getElementById('insightIcon').className = `insight-icon ${esc(top.severity || '')}`;
   document.getElementById('insightLabel').textContent = t('insightLabel');
   document.getElementById('insightTitle').textContent = top.item || '';
@@ -1982,7 +2093,7 @@ function _renderAlert(a) {
   const why  = az.why_it_matters || '';
   const next = az.next_step || '';
   return `
-    <div class="alert-card ${esc(a.severity || '')}">
+    <div class="alert-card glass-card ${esc(a.severity || '')}">
       <div class="alert-hd">
         <span>${ico}</span>
         <span class="alert-cat">${esc((a.category || '').toUpperCase())}</span>
