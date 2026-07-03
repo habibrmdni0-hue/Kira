@@ -8,29 +8,30 @@
   <style>
     /* ── Design tokens ─────────────────────────────────── */
     :root {
-      --sb-w:     240px;
-      --sb-bg:    #1B2E4B;
-      --sb-text:  rgba(255,255,255,.65);
-      --sb-muted: rgba(255,255,255,.25);
-      --sb-hover: rgba(255,255,255,.08);
-      --sb-act:   rgba(37,99,235,.75);
-      --sb-accent:#60A5FA;
-      --bg:       #F8F9FB;
-      --card:     #FFFFFF;
-      --border:   #E2E8F0;
-      --sh:       0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
-      --sh-hover: 0 4px 12px rgba(0,0,0,.08), 0 2px 4px rgba(0,0,0,.05);
-      --r:        12px;
-      --accent:   #2563EB;
+      --sb-w:      240px;
+      --sb-bg:     #FFFFFF;
+      --sb-text:   #6B6A63;
+      --sb-muted:  #B7B6AE;
+      --sb-hover:  #F3F2ED;
+      --sb-act-bg: rgba(37,99,235,.08);
+      --sb-accent: #2563EB;
+      --bg:        #F7F6F3;
+      --card:      #FFFFFF;
+      --border:    #E8E7E1;
+      --sh:        none;
+      --sh-hover:  0 8px 24px rgba(20,20,18,.06);
+      --r:         18px;
+      --accent:    #2563EB;
+      --accent-light: rgba(37,99,235,.08);
       --green:    #10B981;
       --amber:    #F59E0B;
       --red:      #EF4444;
-      --t1:       #111827;
-      --t2:       #6B7280;
-      --t3:       #9CA3AF;
-      --ok-bg:    #D1FAE5; --ok-ic:    #059669;
-      --warn-bg:  #FEF3C7; --warn-ic:  #D97706;
-      --danger-bg:#FEE2E2; --danger-ic:#DC2626;
+      --t1:       #1A1A1A;
+      --t2:       #4A4A47;
+      --t3:       #918F86;
+      --ok-bg:    #E6F4EE; --ok-ic:    #12805A;
+      --warn-bg:  #FBF0DD; --warn-ic:  #AD7409;
+      --danger-bg:#FBEAEA; --danger-ic:#C33A3A;
     }
 
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -46,7 +47,8 @@
     /* ─────────────────── SIDEBAR ──────────────────────── */
     .sidebar {
       width: var(--sb-w);
-      background: linear-gradient(180deg, #24395C 0%, var(--sb-bg) 45%, var(--sb-bg) 100%);
+      background: var(--sb-bg);
+      border-right: 1px solid var(--border);
       position: fixed; left: 0; top: 0; bottom: 0;
       display: flex; flex-direction: column;
       z-index: 100;
@@ -57,13 +59,13 @@
     /* Logo */
     .sb-logo {
       padding: 22px 20px 16px;
-      border-bottom: 1px solid rgba(255,255,255,.07);
+      border-bottom: 1px solid var(--border);
       flex-shrink: 0;
     }
     .sb-logo-text {
-      font-size: 21px; font-weight: 800; color: #fff; letter-spacing: -.6px;
+      font-size: 20px; font-weight: 800; color: var(--t1); letter-spacing: -.6px;
     }
-    .sb-logo-text em { color: #60A5FA; font-style: normal; }
+    .sb-logo-text em { color: var(--accent); font-style: normal; }
     .sb-logo-sub {
       font-size: 10px; color: var(--sb-muted); margin-top: 2px;
       text-transform: uppercase; letter-spacing: .9px;
@@ -73,16 +75,16 @@
     .sb-biz {
       padding: 11px 16px;
       display: flex; align-items: center; gap: 9px;
-      background: rgba(255,255,255,.05);
-      border-bottom: 1px solid rgba(255,255,255,.05);
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
       flex-shrink: 0;
     }
     .sb-biz-dot {
       width: 7px; height: 7px; border-radius: 50%;
-      background: #22C55E; box-shadow: 0 0 6px #22C55E; flex-shrink: 0;
+      background: #22C55E; box-shadow: 0 0 0 3px rgba(34,197,94,.15); flex-shrink: 0;
     }
     .sb-biz-name {
-      font-size: 12px; font-weight: 600; color: #fff;
+      font-size: 12px; font-weight: 600; color: var(--t1);
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
 
@@ -95,15 +97,14 @@
     }
     .sb-nav-item {
       display: flex; align-items: center; gap: 10px;
-      padding: 10px 14px; margin: 2px 8px; border-radius: 9px;
-      cursor: pointer; transition: background-color .15s ease, color .15s ease, box-shadow .15s ease;
+      padding: 10px 14px; margin: 2px 8px; border-radius: 10px;
+      cursor: pointer; transition: background-color .15s ease, color .15s ease;
       color: var(--sb-text); user-select: none;
       position: relative;
     }
-    .sb-nav-item:hover { background: var(--sb-hover); color: #fff; }
+    .sb-nav-item:hover { background: var(--sb-hover); color: var(--t1); }
     .sb-nav-item.active {
-      background: var(--sb-act); color: #fff;
-      box-shadow: 0 2px 10px rgba(37,99,235,.35), inset 0 0 0 1px rgba(255,255,255,.06);
+      background: var(--sb-act-bg); color: var(--accent);
     }
     .sb-nav-item.active::before {
       content: '';
@@ -121,7 +122,7 @@
     /* Business selector */
     .sb-users {
       padding: 6px 8px;
-      border-top: 1px solid rgba(255,255,255,.06);
+      border-top: 1px solid var(--border);
       flex-shrink: 0;
     }
     .sb-users-label {
@@ -130,22 +131,22 @@
     }
     .sb-user-item {
       display: flex; align-items: center; gap: 8px;
-      padding: 7px 12px; border-radius: 7px; cursor: pointer;
+      padding: 7px 12px; border-radius: 8px; cursor: pointer;
       transition: background-color .15s ease, color .15s ease; color: var(--sb-text);
       font-size: 12px; font-weight: 500; user-select: none;
     }
-    .sb-user-item:hover { background: var(--sb-hover); color: #fff; }
-    .sb-user-item.active { background: rgba(255,255,255,.11); color: #fff; }
+    .sb-user-item:hover { background: var(--sb-hover); color: var(--t1); }
+    .sb-user-item.active { background: var(--sb-act-bg); color: var(--accent); }
     .sb-user-dot {
       width: 6px; height: 6px; border-radius: 50%;
-      background: rgba(255,255,255,.25); flex-shrink: 0; transition: all .15s;
+      background: #D9D7CE; flex-shrink: 0; transition: all .15s;
     }
-    .sb-user-item.active .sb-user-dot { background: #22C55E; box-shadow: 0 0 5px #22C55E; }
+    .sb-user-item.active .sb-user-dot { background: #22C55E; box-shadow: 0 0 0 3px rgba(34,197,94,.15); }
 
     /* Sidebar bottom */
     .sb-bottom {
       padding: 10px 12px 14px;
-      border-top: 1px solid rgba(255,255,255,.06);
+      border-top: 1px solid var(--border);
       flex-shrink: 0;
       display: flex; flex-direction: column; gap: 9px;
     }
@@ -153,23 +154,23 @@
       display: flex; align-items: center;
     }
     .sb-lang-label { font-size: 10px; color: var(--sb-muted); flex: 1; }
-    .lang-switch { display: flex; background: rgba(255,255,255,.1); border-radius: 7px; overflow: hidden; }
+    .lang-switch { display: flex; background: var(--bg); border: 1px solid var(--border); border-radius: 999px; padding: 2px; overflow: hidden; }
     .lang-btn {
       padding: 4px 11px; font-size: 11px; font-weight: 600;
-      cursor: pointer; color: rgba(255,255,255,.45);
+      cursor: pointer; color: var(--t3); border-radius: 999px;
       border: none; background: transparent; transition: all .15s; font-family: inherit;
     }
-    .lang-btn.active { background: rgba(255,255,255,.2); color: #fff; }
+    .lang-btn.active { background: var(--t1); color: #fff; }
     .amd-btn {
-      background: #00916A; color: #fff; border: none; cursor: pointer;
-      padding: 8px 12px; border-radius: 8px;
+      background: #ECFDF5; color: #047857; border: 1px solid #BBEBD5; cursor: pointer;
+      padding: 8px 12px; border-radius: 999px;
       font-size: 11px; font-weight: 700; letter-spacing: .3px;
       width: 100%; text-align: left; font-family: inherit;
-      transition: opacity .15s ease, transform .15s ease;
+      transition: opacity .15s ease;
       display: flex; align-items: center; gap: 7px;
     }
     .amd-btn svg { width: 14px; height: 14px; stroke: currentColor; flex-shrink: 0; }
-    .amd-btn:hover { opacity: .85; }
+    .amd-btn:hover { opacity: .75; }
     .sb-mode { font-size: 10px; color: var(--sb-muted); line-height: 1.5; }
 
     /* ─────────────────── MAIN ─────────────────────────── */
@@ -191,7 +192,7 @@
       display: flex; align-items: center; justify-content: space-between;
       flex-shrink: 0;
     }
-    .vh-title { font-size: 24px; font-weight: 700; color: var(--t1); letter-spacing: -.3px; }
+    .vh-title { font-size: 26px; font-weight: 800; color: var(--t1); letter-spacing: -.5px; }
     .vh-sub   { font-size: 11px; color: var(--t3); margin-top: 1px; }
     .vh-actions { display: flex; gap: 8px; align-items: center; }
 
@@ -217,12 +218,14 @@
       padding: 16px 20px 10px;
     }
     .card-title {
-      font-size: 11px; font-weight: 600; text-transform: uppercase;
-      letter-spacing: .5px; color: var(--t2);
+      display: inline-block;
+      font-size: 11px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .8px; color: var(--t2);
+      background: var(--bg); border-radius: 999px; padding: 4px 11px;
     }
     .badge {
-      font-size: 10px; color: var(--t3);
-      background: var(--bg); border-radius: 20px; padding: 2px 8px;
+      font-size: 10px; color: var(--t3); font-weight: 600;
+      background: var(--bg); border: 1px solid var(--border); border-radius: 999px; padding: 3px 9px;
     }
 
     /* ─────────────────── VIEW 1: Overview ─────────────── */
@@ -574,51 +577,109 @@
     /* ─────────────────── LANDING PAGE ──────────────────── */
     .landing {
       min-height: 100vh; width: 100%;
-      background: linear-gradient(160deg, #0F1F38 0%, #1B2E4B 45%, #14263f 100%);
-      color: #fff;
+      background: var(--bg);
+      color: var(--t1);
       display: flex; flex-direction: column; align-items: center;
-      padding: 28px 24px 64px;
+      padding: 32px 24px 0;
     }
     .lp-topbar {
-      width: 100%; max-width: 980px;
+      width: 100%; max-width: 1080px;
       display: flex; align-items: center; justify-content: space-between;
-      margin-bottom: 64px;
+      margin-bottom: 72px;
     }
-    .lp-brand { font-size: 18px; font-weight: 800; letter-spacing: -.4px; }
-    .lp-brand em, .lp-logo em { color: #60A5FA; font-style: normal; }
-    .lp-hero { max-width: 720px; text-align: center; margin-bottom: 56px; }
-    .lp-logo { font-size: 52px; font-weight: 800; letter-spacing: -2px; margin-bottom: 20px; }
-    .lp-tagline { font-size: 22px; font-weight: 600; color: #E2E8F0; line-height: 1.5; margin-bottom: 20px; }
-    .lp-explain { font-size: 15px; color: rgba(255,255,255,.72); line-height: 1.75; margin-bottom: 32px; }
+    .lp-brand { font-size: 19px; font-weight: 800; letter-spacing: -.4px; color: var(--t1); }
+    .lp-brand em { color: var(--accent); font-style: normal; }
+
+    .lp-hero {
+      max-width: 700px; text-align: center; margin-bottom: 40px;
+      display: flex; flex-direction: column; align-items: center;
+    }
+    .lp-pill {
+      display: inline-flex; align-items: center;
+      font-size: 11px; font-weight: 700; letter-spacing: .8px; text-transform: uppercase;
+      color: var(--t2); background: #fff; border: 1px solid var(--border);
+      padding: 7px 15px; border-radius: 999px; margin-bottom: 24px;
+    }
+    .lp-headline {
+      font-size: 52px; font-weight: 800; letter-spacing: -1.5px; line-height: 1.08;
+      color: var(--t1); margin-bottom: 22px;
+    }
+    .lp-explain { font-size: 16px; color: var(--t2); line-height: 1.7; margin-bottom: 30px; }
     .lp-cta {
-      padding: 13px 30px; font-size: 14px; border-radius: 10px;
-      box-shadow: 0 10px 26px rgba(37,99,235,.35);
+      padding: 15px 32px; font-size: 14px; font-weight: 700; border-radius: 999px;
+      background: #111111; color: #fff; border: none;
     }
-    .lp-features {
-      width: 100%; max-width: 980px;
-      display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;
-      margin-bottom: 56px;
+    .lp-cta:hover { opacity: .85; }
+
+    .lp-trust-row {
+      display: flex; flex-wrap: wrap; gap: 10px; justify-content: center;
+      margin-top: 30px;
     }
-    .lp-feature-card {
-      background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.1);
-      border-radius: 14px; padding: 24px 20px; text-align: left;
+    .lp-trust-pill {
+      font-size: 12px; font-weight: 600; color: var(--t2);
+      background: #fff; border: 1px solid var(--border);
+      padding: 7px 15px; border-radius: 999px;
     }
-    .lp-feature-icon {
-      width: 40px; height: 40px; border-radius: 10px;
-      background: rgba(96,165,250,.15); color: #60A5FA;
+
+    /* Agent pipeline flow */
+    .lp-flow-section { width: 100%; max-width: 1080px; margin: 64px 0 56px; }
+    .lp-section-label {
+      text-align: center; font-size: 11px; font-weight: 700; letter-spacing: 1px;
+      text-transform: uppercase; color: var(--t3); margin-bottom: 28px;
+    }
+    .lp-flow { display: flex; align-items: stretch; gap: 0; flex-wrap: wrap; justify-content: center; }
+    .lp-flow-card {
+      background: #fff; border: 1px solid var(--border); border-radius: 16px;
+      padding: 20px 16px; width: 152px; text-align: left; flex-shrink: 0;
+    }
+    .lp-flow-card--kira { background: var(--t1); border-color: var(--t1); }
+    .lp-flow-card--kira .lp-flow-title,
+    .lp-flow-card--kira .lp-flow-desc,
+    .lp-flow-card--kira .lp-flow-tag { color: rgba(255,255,255,.85); }
+    .lp-flow-card--kira .lp-flow-title { color: #fff; }
+    .lp-flow-card--kira .lp-flow-icon { background: rgba(255,255,255,.12); color: #fff; }
+    .lp-flow-icon {
+      width: 32px; height: 32px; border-radius: 9px;
+      background: var(--accent-light); color: var(--accent);
       display: flex; align-items: center; justify-content: center;
       margin-bottom: 14px;
     }
-    .lp-feature-icon svg { width: 20px; height: 20px; stroke: currentColor; }
-    .lp-feature-title { font-size: 15px; font-weight: 700; margin-bottom: 6px; }
-    .lp-feature-desc  { font-size: 13px; color: rgba(255,255,255,.65); line-height: 1.6; }
-    .lp-amd {
-      width: 100%; max-width: 720px;
-      background: rgba(0,145,106,.14); border: 1px solid rgba(0,145,106,.4);
-      border-radius: 14px; padding: 24px 28px; text-align: center;
+    .lp-flow-icon svg { width: 16px; height: 16px; stroke: currentColor; }
+    .lp-flow-tag {
+      font-size: 9px; font-weight: 700; letter-spacing: .5px; text-transform: uppercase;
+      color: var(--t3); margin-bottom: 4px;
     }
-    .lp-amd-title { font-size: 15px; font-weight: 700; color: #6EE7B7; margin-bottom: 10px; }
-    .lp-amd-body  { font-size: 13px; color: rgba(255,255,255,.78); line-height: 1.7; }
+    .lp-flow-title { font-size: 15px; font-weight: 800; color: var(--t1); margin-bottom: 6px; }
+    .lp-flow-desc { font-size: 11.5px; color: var(--t2); line-height: 1.55; }
+    .lp-flow-connector {
+      align-self: center; width: 24px; height: 0;
+      border-top: 2px dashed var(--border); flex-shrink: 0;
+    }
+    @media (max-width: 980px) {
+      .lp-flow { flex-direction: column; align-items: stretch; }
+      .lp-flow-card { width: 100%; }
+      .lp-flow-connector { display: none; }
+    }
+
+    .lp-amd {
+      width: 100%; max-width: 760px;
+      background: #111111;
+      border-radius: 24px; padding: 40px 44px; text-align: center;
+      margin-bottom: 56px;
+    }
+    .lp-amd-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-size: 11px; font-weight: 700; letter-spacing: .6px; text-transform: uppercase;
+      color: #111; background: #fff; padding: 6px 14px; border-radius: 999px;
+      margin-bottom: 20px;
+    }
+    .lp-amd-title { font-size: 20px; font-weight: 800; color: #fff; margin-bottom: 14px; }
+    .lp-amd-body  { font-size: 14px; color: rgba(255,255,255,.72); line-height: 1.75; }
+
+    .lp-footer {
+      width: 100%; padding: 26px 24px 40px; text-align: center;
+      font-size: 12px; color: var(--t3); border-top: 1px solid var(--border);
+    }
 
     /* ─────────────────── Scrollbar ─────────────────────── */
     ::-webkit-scrollbar       { width: 4px; }
@@ -627,7 +688,7 @@
 
     /* Sidebar scrollbar */
     .sidebar::-webkit-scrollbar { width: 3px; }
-    .sidebar::-webkit-scrollbar-thumb { background: rgba(255,255,255,.15); }
+    .sidebar::-webkit-scrollbar-thumb { background: rgba(0,0,0,.12); }
   </style>
 </head>
 <body>
@@ -643,36 +704,83 @@
   </div>
 
   <div class="lp-hero">
-    <div class="lp-logo">Kira<em>AI</em></div>
-    <div class="lp-tagline" id="lpTagline">AI co-pilot proaktif untuk 60 juta+ pemilik warung dan UMKM Indonesia</div>
+    <div class="lp-pill" id="lpPill">AI Co-Pilot untuk UMKM Indonesia</div>
+    <h1 class="lp-headline" id="lpTagline">AI co-pilot proaktif untuk 60 juta+ pemilik warung dan UMKM Indonesia</h1>
     <p class="lp-explain" id="lpExplain">Kira tidak menunggu ditanya. Enam agen AI khusus — Mata untuk baca nota, Juru Hitung untuk laporan keuangan, Penjaga Stok untuk prediksi kehabisan barang, Strategi untuk rekomendasi harga, dan Suara untuk percakapan natural — bekerja sama memantau bisnis Anda 24 jam dan memberi peringatan sebelum masalah terjadi.</p>
-    <button class="btn btn-primary lp-cta" onclick="enterDashboard()">
+    <button class="btn lp-cta" onclick="enterDashboard()">
       <span id="lpCtaLabel">Lihat Demo Live</span>
     </button>
+
+    <div class="lp-trust-row">
+      <span class="lp-trust-pill" id="lpTrust1">3 Demo Bisnis Live</span>
+      <span class="lp-trust-pill" id="lpTrust2">6 Agen AI</span>
+      <span class="lp-trust-pill" id="lpTrust3">Firestore Real-time</span>
+    </div>
   </div>
 
-  <div class="lp-features">
-    <div class="lp-feature-card">
-      <div class="lp-feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></div>
-      <div class="lp-feature-title" id="lpF1Title">Proaktif, bukan reaktif</div>
-      <div class="lp-feature-desc"  id="lpF1Desc">Kira memantau bisnis Anda 24 jam dan memberi peringatan sebelum masalah terjadi — bukan menunggu Anda bertanya.</div>
-    </div>
-    <div class="lp-feature-card">
-      <div class="lp-feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></div>
-      <div class="lp-feature-title" id="lpF2Title">Baca nota otomatis</div>
-      <div class="lp-feature-desc"  id="lpF2Desc">Cukup foto nota belanja — Mata akan membacanya dan mencatat transaksi secara otomatis.</div>
-    </div>
-    <div class="lp-feature-card">
-      <div class="lp-feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-4.8 7.6 8.5 8.5 0 0 1-8.9-.9L3 21l1.9-4.3a8.38 8.38 0 0 1-.9-3.9 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg></div>
-      <div class="lp-feature-title" id="lpF3Title">Bahasa natural, bukan menu rumit</div>
-      <div class="lp-feature-desc"  id="lpF3Desc">Tanya Kira seperti bicara dengan teman. Tidak perlu belajar menu atau istilah akuntansi.</div>
+  <div class="lp-flow-section">
+    <div class="lp-section-label" id="lpFlowLabel">ALUR KERJA 6 AGEN</div>
+    <div class="lp-flow">
+
+      <div class="lp-flow-card">
+        <div class="lp-flow-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></div>
+        <div class="lp-flow-tag" id="lpF1Tag">Baca Nota (OCR)</div>
+        <div class="lp-flow-title" id="lpF1Title">Mata</div>
+        <div class="lp-flow-desc" id="lpF1Desc">Cukup foto nota belanja — Mata membacanya dan mencatat transaksi secara otomatis.</div>
+      </div>
+      <div class="lp-flow-connector"></div>
+
+      <div class="lp-flow-card">
+        <div class="lp-flow-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="20" x2="6" y2="14"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="18" y1="20" x2="18" y2="10"/></svg></div>
+        <div class="lp-flow-tag" id="lpF2Tag">Laporan Keuangan</div>
+        <div class="lp-flow-title" id="lpF2Title">Juru Hitung</div>
+        <div class="lp-flow-desc" id="lpF2Desc">Menyusun laporan keuangan dan menghitung margin dari setiap transaksi secara real-time.</div>
+      </div>
+      <div class="lp-flow-connector"></div>
+
+      <div class="lp-flow-card">
+        <div class="lp-flow-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4a2 2 0 0 0 1-1.73z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></div>
+        <div class="lp-flow-tag" id="lpF3Tag">Prediksi Stok</div>
+        <div class="lp-flow-title" id="lpF3Title">Penjaga Stok</div>
+        <div class="lp-flow-desc" id="lpF3Desc">Memprediksi kapan stok akan habis dan memperingatkan sebelum barang kosong.</div>
+      </div>
+      <div class="lp-flow-connector"></div>
+
+      <div class="lp-flow-card">
+        <div class="lp-flow-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 18 8.5 10.5 13.5 15.5 23 6"/><polyline points="17 6 23 6 23 12"/></svg></div>
+        <div class="lp-flow-tag" id="lpF4Tag">Rekomendasi Harga</div>
+        <div class="lp-flow-title" id="lpF4Title">Strategi</div>
+        <div class="lp-flow-desc" id="lpF4Desc">Menganalisis margin dan tren untuk merekomendasikan harga yang lebih menguntungkan.</div>
+      </div>
+      <div class="lp-flow-connector"></div>
+
+      <div class="lp-flow-card">
+        <div class="lp-flow-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-4.8 7.6 8.5 8.5 0 0 1-8.9-.9L3 21l1.9-4.3a8.38 8.38 0 0 1-.9-3.9 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg></div>
+        <div class="lp-flow-tag" id="lpF5Tag">Percakapan Natural</div>
+        <div class="lp-flow-title" id="lpF5Title">Suara</div>
+        <div class="lp-flow-desc" id="lpF5Desc">Tanya Kira seperti bicara dengan teman — tidak perlu belajar menu atau istilah akuntansi.</div>
+      </div>
+      <div class="lp-flow-connector"></div>
+
+      <div class="lp-flow-card lp-flow-card--kira">
+        <div class="lp-flow-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></div>
+        <div class="lp-flow-tag" id="lpF6Tag">Orkestrator</div>
+        <div class="lp-flow-title" id="lpF6Title">Kira</div>
+        <div class="lp-flow-desc" id="lpF6Desc">Menyatukan kelima agen menjadi satu asisten proaktif yang memantau bisnis Anda 24 jam.</div>
+      </div>
+
     </div>
   </div>
 
   <div class="lp-amd">
+    <div class="lp-amd-badge">⚡ AMD MI300X</div>
     <div class="lp-amd-title" id="lpAmdTitle">Kenapa AMD MI300X?</div>
     <p class="lp-amd-body" id="lpAmdBody">Reasoning mendalam butuh model besar — 70 miliar parameter — yang tidak bisa berjalan di HP terjangkau. AMD MI300X menjalankan otak analitik Kira di cloud, jadi pemilik warung cukup pakai HP biasa untuk analisis bisnis kelas enterprise.</p>
   </div>
+
+  <footer class="lp-footer">
+    <span id="lpFooterText">© 2026 Kira AI · Dibuat untuk UMKM Indonesia</span>
+  </footer>
 </div>
 
 <!-- ══════════════════ SIDEBAR ══════════════════ -->
@@ -1089,14 +1197,24 @@ const T = {
     lpTagline:'AI co-pilot proaktif untuk 60 juta+ pemilik warung dan UMKM Indonesia',
     lpExplain:'Kira tidak menunggu ditanya. Enam agen AI khusus — Mata untuk baca nota, Juru Hitung untuk laporan keuangan, Penjaga Stok untuk prediksi kehabisan barang, Strategi untuk rekomendasi harga, dan Suara untuk percakapan natural — bekerja sama memantau bisnis Anda 24 jam dan memberi peringatan sebelum masalah terjadi.',
     lpCtaLabel:'Lihat Demo Live',
-    lpF1Title:'Proaktif, bukan reaktif',
-    lpF1Desc:'Kira memantau bisnis Anda 24 jam dan memberi peringatan sebelum masalah terjadi — bukan menunggu Anda bertanya.',
-    lpF2Title:'Baca nota otomatis',
-    lpF2Desc:'Cukup foto nota belanja — Mata akan membacanya dan mencatat transaksi secara otomatis.',
-    lpF3Title:'Bahasa natural, bukan menu rumit',
-    lpF3Desc:'Tanya Kira seperti bicara dengan teman. Tidak perlu belajar menu atau istilah akuntansi.',
+    lpPill:'AI Co-Pilot untuk UMKM Indonesia',
+    lpTrust1:'3 Demo Bisnis Live', lpTrust2:'6 Agen AI', lpTrust3:'Firestore Real-time',
+    lpFlowLabel:'ALUR KERJA 6 AGEN',
+    lpF1Tag:'Baca Nota (OCR)', lpF1Title:'Mata',
+    lpF1Desc:'Cukup foto nota belanja — Mata membacanya dan mencatat transaksi secara otomatis.',
+    lpF2Tag:'Laporan Keuangan', lpF2Title:'Juru Hitung',
+    lpF2Desc:'Menyusun laporan keuangan dan menghitung margin dari setiap transaksi secara real-time.',
+    lpF3Tag:'Prediksi Stok', lpF3Title:'Penjaga Stok',
+    lpF3Desc:'Memprediksi kapan stok akan habis dan memperingatkan sebelum barang kosong.',
+    lpF4Tag:'Rekomendasi Harga', lpF4Title:'Strategi',
+    lpF4Desc:'Menganalisis margin dan tren untuk merekomendasikan harga yang lebih menguntungkan.',
+    lpF5Tag:'Percakapan Natural', lpF5Title:'Suara',
+    lpF5Desc:'Tanya Kira seperti bicara dengan teman — tidak perlu belajar menu atau istilah akuntansi.',
+    lpF6Tag:'Orkestrator', lpF6Title:'Kira',
+    lpF6Desc:'Menyatukan kelima agen menjadi satu asisten proaktif yang memantau bisnis Anda 24 jam.',
     lpAmdTitle:'Kenapa AMD MI300X?',
     lpAmdBody:'Reasoning mendalam butuh model besar — 70 miliar parameter — yang tidak bisa berjalan di HP terjangkau. AMD MI300X menjalankan otak analitik Kira di cloud, jadi pemilik warung cukup pakai HP biasa untuk analisis bisnis kelas enterprise.',
+    lpFooterText:'© 2026 Kira AI · Dibuat untuk UMKM Indonesia',
   },
   en: {
     navOv: 'Overview', navAn: 'Analytics', navFc: 'Forecast',
@@ -1146,14 +1264,24 @@ const T = {
     lpTagline:'The proactive AI co-pilot for 60M+ small shop owners across Indonesia',
     lpExplain:"Kira doesn't wait to be asked. Six specialist AI agents — Eyes to read receipts, Bookkeeper for financial reports, Stock Guardian to predict stockouts, Strategy for pricing recommendations, and Voice for natural conversation — work together to watch your business 24/7 and warn you before problems happen.",
     lpCtaLabel:'See Live Demo',
-    lpF1Title:'Proactive, not reactive',
-    lpF1Desc:"Kira watches your business around the clock and warns you before problems happen — instead of waiting for you to ask.",
-    lpF2Title:'Reads receipts automatically',
-    lpF2Desc:'Just snap a photo of a receipt — Eyes reads it and logs the transaction automatically.',
-    lpF3Title:'Natural language, not complex menus',
-    lpF3Desc:"Talk to Kira like a friend. No need to learn menus or accounting jargon.",
+    lpPill:'AI Co-Pilot for Indonesian SMEs',
+    lpTrust1:'3 Live Demo Businesses', lpTrust2:'6 AI Agents', lpTrust3:'Firestore Real-time',
+    lpFlowLabel:'THE 6-AGENT PIPELINE',
+    lpF1Tag:'Receipt OCR', lpF1Title:'Mata',
+    lpF1Desc:'Just snap a photo of a receipt — Mata reads it and logs the transaction automatically.',
+    lpF2Tag:'Bookkeeping', lpF2Title:'Juru Hitung',
+    lpF2Desc:'Builds financial reports and calculates margins from every transaction in real-time.',
+    lpF3Tag:'Stock Forecasting', lpF3Title:'Penjaga Stok',
+    lpF3Desc:"Predicts when stock will run out and warns you before you're out of an item.",
+    lpF4Tag:'Pricing Strategy', lpF4Title:'Strategi',
+    lpF4Desc:'Analyzes margins and trends to recommend more profitable pricing.',
+    lpF5Tag:'Natural Conversation', lpF5Title:'Suara',
+    lpF5Desc:'Talk to Kira like a friend — no need to learn menus or accounting jargon.',
+    lpF6Tag:'Orchestrator', lpF6Title:'Kira',
+    lpF6Desc:'Ties all five agents together into one proactive assistant watching your business 24/7.',
     lpAmdTitle:'Why AMD MI300X?',
     lpAmdBody:"Deep reasoning needs a large model — 70 billion parameters — that can't run on an affordable phone. AMD MI300X runs Kira's analytical brain in the cloud, so shop owners only need an ordinary phone to get enterprise-grade business analysis.",
+    lpFooterText:'© 2026 Kira AI · Built for Indonesian SMEs',
   },
 };
 function t(k) { return T[lang][k] !== undefined ? T[lang][k] : k; }
@@ -1253,8 +1381,12 @@ function _applyStaticLabels() {
                 'lbCash','lbProfit','lbStock','lbLosing','insightLabel',
                 'titleMnSale','titleMnStock','lbMnProduct','lbMnQty','lbMnPrice',
                 'lbMnItem','lbMnNewStock','mnSaleBtnLabel','mnStockBtnLabel',
-                'lpTagline','lpExplain','lpCtaLabel','lpF1Title','lpF1Desc',
-                'lpF2Title','lpF2Desc','lpF3Title','lpF3Desc','lpAmdTitle','lpAmdBody'];
+                'lpPill','lpTagline','lpExplain','lpCtaLabel',
+                'lpTrust1','lpTrust2','lpTrust3','lpFlowLabel',
+                'lpF1Tag','lpF1Title','lpF1Desc','lpF2Tag','lpF2Title','lpF2Desc',
+                'lpF3Tag','lpF3Title','lpF3Desc','lpF4Tag','lpF4Title','lpF4Desc',
+                'lpF5Tag','lpF5Title','lpF5Desc','lpF6Tag','lpF6Title','lpF6Desc',
+                'lpAmdTitle','lpAmdBody','lpFooterText'];
   ids.forEach(k => { const el = document.getElementById(k); if (el) el.textContent = t(k); });
 
   // Chart card titles (same key, different element IDs)
