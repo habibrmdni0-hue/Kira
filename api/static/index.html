@@ -626,28 +626,47 @@
       transition: border-color .15s ease;
     }
 
-    /* Agent pipeline flow */
+    /* Agent pipeline flow — sticky-note pinboard */
     .lp-flow-section { width: 100%; max-width: 1080px; margin: 64px 0 56px; }
     .lp-section-label {
       text-align: center; font-size: 11px; font-weight: 600; letter-spacing: 1px;
-      text-transform: uppercase; color: var(--t3); margin-bottom: 28px;
+      text-transform: uppercase; color: var(--t3); margin-bottom: 40px;
     }
     .lp-flow { display: flex; align-items: flex-start; gap: 0; flex-wrap: wrap; justify-content: center; }
     .lp-flow-card {
-      background: #fff; border: 1px solid var(--border); border-radius: 16px;
-      padding: 20px; width: 152px; text-align: left; flex-shrink: 0;
-      transition: border-color .15s ease, transform .15s ease;
+      position: relative;
+      background: #fff; border: 1px solid var(--border); border-radius: 14px;
+      padding: 26px 16px 20px; width: 150px; text-align: left; flex-shrink: 0;
+      box-shadow: 0 1px 2px rgba(20,20,18,.05), 0 8px 16px rgba(20,20,18,.05);
+      transform: rotate(var(--tilt, 0deg));
+      margin-top: var(--ty, 0px);
+      transition: transform .2s ease, box-shadow .2s ease, border-color .15s ease;
     }
-    .lp-flow-card:hover { border-color: #D8D6CE; transform: translateY(-2px); }
-    /* Kira — same base card style as the other 5; a soft blue accent marks it
-       as the pipeline's conclusion instead of breaking the card language. */
-    .lp-flow-card--kira { border-color: rgba(37,99,235,.35); }
-    .lp-flow-card--kira:hover { border-color: rgba(37,99,235,.55); }
-    .lp-flow-card--kira .lp-flow-tag { color: var(--accent); }
-    .lp-flow-card--kira .lp-flow-icon { background: var(--accent); color: #fff; }
+    /* Straighten + lift on hover — the "peel off the corkboard" interaction.
+       Every card uses this same rule; nothing is singled out. */
+    .lp-flow-card:hover {
+      transform: rotate(0deg) translateY(-5px);
+      box-shadow: 0 2px 6px rgba(20,20,18,.07), 0 16px 28px rgba(20,20,18,.1);
+      border-color: #D8D6CE;
+      z-index: 5;
+    }
+    /* Thumbtack — identical neutral-gray pin on all 6 cards */
+    .lp-flow-pin {
+      position: absolute; top: -7px; left: 50%; transform: translateX(-50%);
+      width: 14px; height: 14px; border-radius: 50%;
+      background: radial-gradient(circle at 35% 30%, #83817A, #2E2D29 78%);
+      box-shadow: 0 2px 3px rgba(0,0,0,.25);
+      z-index: 2;
+    }
+    /* Large corner numeral 01–06 — the one place accent blue is used, identically on every card */
+    .lp-flow-num {
+      position: absolute; top: 12px; right: 14px;
+      font-size: 25px; font-weight: 800; color: var(--accent);
+      letter-spacing: -1px; line-height: 1; opacity: .9;
+    }
     .lp-flow-icon {
       width: 40px; height: 40px; border-radius: 10px;
-      background: var(--bg); color: var(--t3);
+      background: var(--bg); color: var(--t2);
       display: flex; align-items: center; justify-content: center;
       margin-bottom: 14px;
     }
@@ -658,15 +677,18 @@
     }
     .lp-flow-title { font-size: 15px; font-weight: 800; color: var(--t1); margin-bottom: 6px; }
     .lp-flow-desc { font-size: 11.5px; color: var(--t2); line-height: 1.55; }
+    /* Hand-drawn dashed connectors — gentle up/down curve alternates per pair */
     .lp-flow-connector {
-      /* Sits level with the icon badges: 20px card padding + 20px half-icon-height */
-      align-self: flex-start; margin-top: 39px;
-      width: 24px; height: 0;
-      border-top: 2px dashed var(--border); flex-shrink: 0;
+      align-self: flex-start; margin-top: 48px;
+      width: 34px; height: 24px; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
     }
+    .lp-flow-connector svg { width: 100%; height: 100%; overflow: visible; }
     @media (max-width: 980px) {
       .lp-flow { flex-direction: column; align-items: stretch; }
-      .lp-flow-card { width: 100%; }
+      .lp-flow-card {
+        width: 100%; transform: none !important; margin-top: 0 !important;
+      }
       .lp-flow-connector { display: none; }
     }
 
@@ -731,47 +753,69 @@
     <div class="lp-section-label" id="lpFlowLabel">ALUR KERJA 6 AGEN</div>
     <div class="lp-flow">
 
-      <div class="lp-flow-card">
+      <div class="lp-flow-card" style="--tilt:-2deg;--ty:0px">
+        <div class="lp-flow-pin"></div>
+        <div class="lp-flow-num">01</div>
         <div class="lp-flow-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></div>
         <div class="lp-flow-tag" id="lpF1Tag">Baca Nota (OCR)</div>
         <div class="lp-flow-title" id="lpF1Title">Mata</div>
         <div class="lp-flow-desc" id="lpF1Desc">Cukup foto nota belanja — Mata membacanya dan mencatat transaksi secara otomatis.</div>
       </div>
-      <div class="lp-flow-connector"></div>
+      <div class="lp-flow-connector">
+        <svg viewBox="0 0 34 24" preserveAspectRatio="none"><path d="M2,5 Q17,22 32,5" fill="none" stroke="#C9C7BC" stroke-width="2" stroke-linecap="round" stroke-dasharray="4 5"/></svg>
+      </div>
 
-      <div class="lp-flow-card">
+      <div class="lp-flow-card" style="--tilt:2deg;--ty:14px">
+        <div class="lp-flow-pin"></div>
+        <div class="lp-flow-num">02</div>
         <div class="lp-flow-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="20" x2="6" y2="14"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="18" y1="20" x2="18" y2="10"/></svg></div>
         <div class="lp-flow-tag" id="lpF2Tag">Laporan Keuangan</div>
         <div class="lp-flow-title" id="lpF2Title">Juru Hitung</div>
         <div class="lp-flow-desc" id="lpF2Desc">Menyusun laporan keuangan dan menghitung margin dari setiap transaksi secara real-time.</div>
       </div>
-      <div class="lp-flow-connector"></div>
+      <div class="lp-flow-connector">
+        <svg viewBox="0 0 34 24" preserveAspectRatio="none"><path d="M2,19 Q17,2 32,19" fill="none" stroke="#C9C7BC" stroke-width="2" stroke-linecap="round" stroke-dasharray="4 5"/></svg>
+      </div>
 
-      <div class="lp-flow-card">
+      <div class="lp-flow-card" style="--tilt:-1.5deg;--ty:4px">
+        <div class="lp-flow-pin"></div>
+        <div class="lp-flow-num">03</div>
         <div class="lp-flow-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4a2 2 0 0 0 1-1.73z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></div>
         <div class="lp-flow-tag" id="lpF3Tag">Prediksi Stok</div>
         <div class="lp-flow-title" id="lpF3Title">Penjaga Stok</div>
         <div class="lp-flow-desc" id="lpF3Desc">Memprediksi kapan stok akan habis dan memperingatkan sebelum barang kosong.</div>
       </div>
-      <div class="lp-flow-connector"></div>
+      <div class="lp-flow-connector">
+        <svg viewBox="0 0 34 24" preserveAspectRatio="none"><path d="M2,5 Q17,22 32,5" fill="none" stroke="#C9C7BC" stroke-width="2" stroke-linecap="round" stroke-dasharray="4 5"/></svg>
+      </div>
 
-      <div class="lp-flow-card">
+      <div class="lp-flow-card" style="--tilt:1.5deg;--ty:18px">
+        <div class="lp-flow-pin"></div>
+        <div class="lp-flow-num">04</div>
         <div class="lp-flow-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 18 8.5 10.5 13.5 15.5 23 6"/><polyline points="17 6 23 6 23 12"/></svg></div>
         <div class="lp-flow-tag" id="lpF4Tag">Rekomendasi Harga</div>
         <div class="lp-flow-title" id="lpF4Title">Strategi</div>
         <div class="lp-flow-desc" id="lpF4Desc">Menganalisis margin dan tren untuk merekomendasikan harga yang lebih menguntungkan.</div>
       </div>
-      <div class="lp-flow-connector"></div>
+      <div class="lp-flow-connector">
+        <svg viewBox="0 0 34 24" preserveAspectRatio="none"><path d="M2,19 Q17,2 32,19" fill="none" stroke="#C9C7BC" stroke-width="2" stroke-linecap="round" stroke-dasharray="4 5"/></svg>
+      </div>
 
-      <div class="lp-flow-card">
+      <div class="lp-flow-card" style="--tilt:-2deg;--ty:2px">
+        <div class="lp-flow-pin"></div>
+        <div class="lp-flow-num">05</div>
         <div class="lp-flow-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-4.8 7.6 8.5 8.5 0 0 1-8.9-.9L3 21l1.9-4.3a8.38 8.38 0 0 1-.9-3.9 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg></div>
         <div class="lp-flow-tag" id="lpF5Tag">Percakapan Natural</div>
         <div class="lp-flow-title" id="lpF5Title">Suara</div>
         <div class="lp-flow-desc" id="lpF5Desc">Tanya Kira seperti bicara dengan teman — tidak perlu belajar menu atau istilah akuntansi.</div>
       </div>
-      <div class="lp-flow-connector"></div>
+      <div class="lp-flow-connector">
+        <svg viewBox="0 0 34 24" preserveAspectRatio="none"><path d="M2,5 Q17,22 32,5" fill="none" stroke="#C9C7BC" stroke-width="2" stroke-linecap="round" stroke-dasharray="4 5"/></svg>
+      </div>
 
-      <div class="lp-flow-card lp-flow-card--kira">
+      <div class="lp-flow-card" style="--tilt:2deg;--ty:10px">
+        <div class="lp-flow-pin"></div>
+        <div class="lp-flow-num">06</div>
         <div class="lp-flow-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></div>
         <div class="lp-flow-tag" id="lpF6Tag">Orkestrator</div>
         <div class="lp-flow-title" id="lpF6Title">Kira</div>
