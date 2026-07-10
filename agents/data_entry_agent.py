@@ -2,9 +2,10 @@
 DataEntryAgent — lets the shop owner record/update business data through
 natural-language chat instead of the manual "Catat Data" form.
 
-Current scope (slice 1 + 2): stock updates and sales entry. Expense
-recording is a separate future slice — deliberately not built yet (no
-Firestore schema/function exists for it — see project notes).
+Scope: stock updates, sales entry, and ad-hoc expense entry — the three
+write actions the "Catat Data" page plus a new expense_history field
+support. Restocking inventory FOR RESALE (buying more of something to
+sell later) is deliberately NOT one of these — see rule 4 below.
 
 Multi-turn flow:
   Kira uses LLM tool-calling (confirmed working on Fireworks' gpt-oss-120b —
@@ -24,12 +25,14 @@ keyed by user_id. Fine for a single Railway instance / demo; resets on
 restart or redeploy.
 
 Confirmation policy (deliberate, not symmetric):
-  update_stock  — writes immediately, no confirmation. Reversible/low-risk.
-  record_sale   — money-moving. Requires an explicit yes from the owner
-                   before anything is written. The confirmation question
-                   text and the yes/no classification are both plain Python
-                   (not LLM-generated) so this step can't be talked around
-                   by a confused or hallucinating model.
+  update_stock              — writes immediately, no confirmation.
+                               Reversible/low-risk.
+  record_sale/record_expense — money-moving. Requires an explicit yes from
+                               the owner before anything is written. The
+                               confirmation question text and the yes/no
+                               classification are both plain Python (not
+                               LLM-generated) so this step can't be talked
+                               around by a confused or hallucinating model.
 """
 from __future__ import annotations
 
@@ -42,6 +45,7 @@ from data.firestore_client import (
     get_sales_history,
     update_inventory_stock,
     record_transaction,
+    record_expense,
 )
 from .base import BaseAgent, AgentRequest, AgentResponse
 
@@ -79,8 +83,9 @@ _TOOLS = [
             "name": "record_sale",
             "description": (
                 "Record a sale/transaction for one product — the owner is telling "
-                "you they just sold something. Only call this once you know the "
-                "exact product name, the quantity sold, AND the unit price."
+                "you they just sold something TO A CUSTOMER. Only call this once "
+                "you know the exact product name, the quantity sold, AND the unit "
+                "price. Do NOT use this for the owner buying/restocking supplies."
             ),
             "parameters": {
                 "type": "object",
@@ -102,31 +107,74 @@ _TOOLS = [
             },
         },
     },
+    {
+        "type": "function",
+        "function": {
+            "name": "record_expense",
+            "description": (
+                "Record an ad-hoc OPERATIONAL expense the owner just paid for "
+                "(fuel, packaging, utilities, transport, snacks for staff, etc.) "
+                "— money spent that is consumed/used, NOT inventory bought to "
+                "resell later. Only call this once you know a description of "
+                "what it was for AND the amount in Rupiah. No fixed list to "
+                "match against — any description is fine."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "description": {
+                        "type": "string",
+                        "description": "Short description of what the expense was for.",
+                    },
+                    "amount": {
+                        "type": "number",
+                        "description": "Amount spent, in Rupiah (a plain number, e.g. 20000).",
+                    },
+                },
+                "required": ["description", "amount"],
+            },
+        },
+    },
 ]
 
 _SYSTEM_TEMPLATE = """\
 You are Kira, helping a warung (small shop) owner record business data \
 through chat instead of filling out a form.
 
-You have two tools:
+You have three tools:
 - update_stock: the owner is telling you a new stock quantity for an item.
-- record_sale: the owner is telling you they sold something (a transaction).
+- record_sale: the owner is telling you they sold something to a customer.
+- record_expense: the owner is telling you they spent money on an \
+operational cost (fuel, packaging, utilities, etc.) — something consumed, \
+not inventory bought to resell.
 
 RULES:
-1. If a message is missing information needed for either tool, do NOT call \
-it — ask a short, natural follow-up question for exactly the missing \
-piece(s). Do not ask about anything else.
-2. Never guess a name, quantity, or price that wasn't stated or clearly implied.
+1. If a message is missing information needed for a tool, do NOT call it — \
+ask a short, natural follow-up question for exactly the missing piece(s). \
+Do not ask about anything else.
+2. Never guess a name, quantity, price, or amount that wasn't stated or \
+clearly implied.
 3. The owner's actual inventory items are: {item_list}.
    The owner's actual products (for sales) are: {product_list}.
-   If they mention an item/product that doesn't clearly match one of these \
-lists, do NOT call any function — tell them it isn't in their records and \
-they should add it via the "Catat Data" page first.
-4. Indonesian shorthand numbers: "rb"/"ribu" = x1,000, "jt"/"juta" = x1,000,000 \
+   For update_stock/record_sale, if they mention an item/product that \
+doesn't clearly match one of these lists, do NOT call any function — tell \
+them it isn't in their records and they should add it via the "Catat Data" \
+page first. record_expense has no such list — any description is valid.
+4. CRITICAL — buying supplies vs buying inventory to resell: if the owner \
+says they BOUGHT/PURCHASED something and it's clearly for resale (mentions \
+"buat dijual", "buat jualan", "untuk stok", "restock", or the item matches \
+one of the inventory items above), that is NOT record_expense — it changes \
+what they have to sell, not an operating cost. Do NOT call record_expense \
+for this. Instead, explain that restocking isn't recordable via chat yet — \
+tell them to use "update stok [item] jadi [total setelah barang diterima]" \
+once they know the new total, or ask them to clarify if they actually mean \
+an operational expense (not for resale).
+5. Indonesian shorthand numbers: "rb"/"ribu" = x1,000, "jt"/"juta" = x1,000,000 \
 (e.g. "30rb" = 30000, "1,5jt" = 1500000).
-5. Once you have everything a tool needs (matching the lists above), call \
-it immediately — don't ask for confirmation yourself, just call it.
-6. Keep any text reply short — one or two sentences.
+6. Once you have everything a tool needs (matching the lists above where \
+applicable), call it immediately — don't ask for confirmation yourself, \
+just call it.
+7. Keep any text reply short — one or two sentences.
 
 LANGUAGE: {language_instruction}
 """
@@ -266,6 +314,8 @@ class DataEntryAgent(BaseAgent):
 
         if call.function.name == "record_sale":
             return self._handle_record_sale(user_id, language, args, product_names)
+        if call.function.name == "record_expense":
+            return self._handle_record_expense(user_id, language, args)
 
         return self._handle_update_stock(user_id, language, args, item_names)
 
@@ -310,7 +360,7 @@ class DataEntryAgent(BaseAgent):
         )
         return AgentResponse(agent_name=self.name, result={"response_text": text})
 
-    # ── record_sale: validate, then ask for confirmation before writing ─
+    # ── record_sale / record_expense: validate, then require confirmation ─
 
     def _handle_record_sale(
         self, user_id: str, language: str, args: Dict[str, Any], product_names: List[str],
@@ -340,6 +390,7 @@ class DataEntryAgent(BaseAgent):
         revenue = quantity * unit_price
         self._sessions.pop(user_id, None)
         self._pending_confirm[user_id] = {
+            "action":       "record_sale",
             "product_name": matched,
             "quantity":     quantity,
             "unit_price":   unit_price,
@@ -355,6 +406,38 @@ class DataEntryAgent(BaseAgent):
         )
         return AgentResponse(agent_name=self.name, result={"response_text": text})
 
+    def _handle_record_expense(
+        self, user_id: str, language: str, args: Dict[str, Any],
+    ) -> AgentResponse:
+        description = str(args.get("description", "")).strip()
+        try:
+            amount = float(args.get("amount"))
+        except (TypeError, ValueError):
+            amount = None
+
+        if not description or not amount or amount <= 0:
+            self._sessions.pop(user_id, None)
+            text = self._lang(
+                "Maaf, saya tidak yakin soal deskripsi atau jumlahnya. Coba lagi?",
+                "Sorry, I'm not confident about the description or the amount. Could you try again?",
+                language,
+            )
+            return AgentResponse(agent_name=self.name, result={"response_text": text})
+
+        self._sessions.pop(user_id, None)
+        self._pending_confirm[user_id] = {
+            "action":      "record_expense",
+            "description": description,
+            "amount":      amount,
+            "language":    language,
+        }
+        text = self._lang(
+            f"Oke, saya catat pengeluaran '{description}' sebesar Rp{amount:,.0f}. Benar?",
+            f"Got it — recording an expense of '{description}' for Rp{amount:,.0f}. Is that right?",
+            language,
+        )
+        return AgentResponse(agent_name=self.name, result={"response_text": text})
+
     def _handle_confirmation(self, request: AgentRequest) -> AgentResponse:
         user_id = request.user_id
         pending = self._pending_confirm[user_id]
@@ -363,8 +446,8 @@ class DataEntryAgent(BaseAgent):
 
         if verdict is None:
             text = self._lang(
-                "Maaf, saya kurang paham — ya atau tidak untuk catat penjualan ini?",
-                "Sorry, I didn't quite catch that — yes or no to record this sale?",
+                "Maaf, saya kurang paham — ya atau tidak untuk catat ini?",
+                "Sorry, I didn't quite catch that — yes or no to record this?",
                 language,
             )
             return AgentResponse(agent_name=self.name, result={"response_text": text})
@@ -375,6 +458,24 @@ class DataEntryAgent(BaseAgent):
             text = self._lang(
                 "Oke, tidak jadi saya catat. Kalau mau coba lagi, sebutkan detailnya.",
                 "Okay, I won't record that. Let me know the details if you'd like to try again.",
+                language,
+            )
+            return AgentResponse(agent_name=self.name, result={"response_text": text})
+
+        if pending["action"] == "record_expense":
+            try:
+                result = record_expense(user_id, pending["description"], pending["amount"])
+            except ValueError as exc:
+                return AgentResponse(
+                    agent_name=self.name,
+                    result={"response_text": str(exc)},
+                    success=False, error=str(exc),
+                )
+            text = self._lang(
+                f"Sip, pengeluaran '{pending['description']}' sudah saya catat "
+                f"(Rp{pending['amount']:,.0f}). Saldo kas sekarang Rp{result['new_cash_balance']:,.0f}.",
+                f"Done — expense '{pending['description']}' recorded "
+                f"(Rp{pending['amount']:,.0f}). Cash balance is now Rp{result['new_cash_balance']:,.0f}.",
                 language,
             )
             return AgentResponse(agent_name=self.name, result={"response_text": text})

@@ -26,9 +26,11 @@ AGENT_DESCRIPTIONS = {
     "data_entry_agent": (
         "Recording or updating business data the owner is reporting as new "
         "fact — e.g. 'update stok gula jadi 5kg', 'stok minyak sekarang 2 liter', "
-        "'catat penjualan gula 2kg', 'tadi laku telur 1kg harga 30rb'. "
+        "'catat penjualan gula 2kg', 'tadi laku telur 1kg harga 30rb', "
+        "'catat pengeluaran beli bensin 20rb', 'tadi keluar 50rb buat plastik'. "
         "Use ONLY when the owner is telling Kira new information to SAVE, "
-        "never when they're just asking to view/check existing data."
+        "never when they're just asking to view/check existing data (a question "
+        "like 'pengeluaran bulan ini berapa' is bookkeeper_agent, not this)."
     ),
 }
 
@@ -113,6 +115,13 @@ _KEYWORD_MAP = [
     (["catat penjualan", "catat jual", "tadi laku", "barusan laku", "laku terjual",
       "record sale", "log sale"],
      "record a sale", ["data_entry_agent"]),
+
+    # Expense (write) — must also come BEFORE the read-only "pengeluaran"/
+    # "expense" keywords in the financial-summary group below, or a write
+    # like "catat pengeluaran beli bensin" would get misrouted to a read.
+    (["catat pengeluaran", "catat keluar", "tadi keluar", "barusan keluar",
+      "abis buat beli", "habis buat beli", "record expense", "log expense"],
+     "record an expense", ["data_entry_agent"]),
 
     # Strategy/pricing — check BEFORE generic P&L so "produk rugi" + "saran" routes correctly
     (["strategi", "saran", "produk laris", "produk rugi", "harga jual", "promosi",

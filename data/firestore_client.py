@@ -415,6 +415,43 @@ def record_transaction(user_id: str, product_name: str, quantity: float, unit_pr
     return {"new_cash_balance": raw["cash_balance"]}
 
 
+def record_expense(user_id: str, description: str, amount: float) -> Dict[str, Any]:
+    """
+    Record a manual ad-hoc expense: subtracts amount from cash_balance and
+    appends/updates today's entry in expense_history.
+
+    Unlike record_transaction, there is no fixed list to validate against —
+    an expense can be for anything (fuel, packaging, utilities, ...) — so
+    this never raises for an unrecognized description, only for an unknown
+    user_id.
+
+    This is intentionally independent of daily_operating_expenses (the
+    fixed daily overhead estimate used by bookkeeper_agent/forecast.py) to
+    avoid double-counting: ad-hoc expenses affect cash_balance (and so cash
+    runway forecasts) immediately, but do not feed into the P&L net_profit
+    calculation, which still assumes the fixed daily estimate only.
+    """
+    raw = _fetch_raw(user_id)
+    if raw is None:
+        raise ValueError(f"No business data for {user_id!r}")
+
+    raw["cash_balance"] = raw.get("cash_balance", 0) - amount
+
+    today   = _date.today().isoformat()
+    history = raw.setdefault("expense_history", [])
+    entry   = next((h for h in history if h["date"] == today), None)
+    item    = {"description": description, "amount": amount}
+    if entry is not None:
+        entry["amount"] = entry.get("amount", 0) + amount
+        entry.setdefault("items", []).append(item)
+    else:
+        history.append({"date": today, "amount": amount, "items": [item]})
+        history.sort(key=lambda h: h["date"])
+
+    _persist(user_id, raw)
+    return {"new_cash_balance": raw["cash_balance"]}
+
+
 def update_inventory_stock(user_id: str, item_name: str, new_stock_quantity: float) -> Dict[str, Any]:
     """
     Update the stock field for item_name in the business's inventory array.
