@@ -85,8 +85,6 @@ kira/
 │   └── reasoning_agent.py   #   70B model call via AMD MI300X + vLLM (OpenAI-compatible client)
 ├── api/
 │   ├── server.py            #   FastAPI app — /chat, /proactive, /scan-receipt, /business, /health
-│   ├── server_minimal.py    #   Minimal fallback app if the full server fails to import
-│   ├── entrypoint.py         #   Railway/Docker entrypoint — tries server.py, falls back to minimal
 │   └── static/index.html    #   Single-page dashboard frontend
 ├── orchestrator/
 │   ├── orchestrator.py      #   KiraOrchestrator — LangGraph StateGraph (reactive flow)
@@ -98,14 +96,11 @@ kira/
 ├── config/
 │   └── settings.py          #   Loads all configuration from .env
 ├── scripts/
-│   ├── seed_firestore.py    #   Seeds three demo businesses into Firestore
-│   └── test_import.py       #   Smoke test for module imports
+│   └── seed_firestore.py    #   Seeds three demo businesses into Firestore
 ├── main.py                  #   End-to-end CLI demo (9 scenarios, no server needed)
 ├── Dockerfile                #   Production image
-├── Dockerfile.railway        #   Railway-specific build variant
 ├── docker-compose.yml        #   Local reproducible dev environment
-├── Procfile                  #   Process definition (web: python api/entrypoint.py)
-├── railway.json               #   Railway build/deploy config
+├── railway.json               #   Railway build/deploy config (startCommand: python -m api.server)
 ├── requirements.txt
 └── .env.example
 ```
