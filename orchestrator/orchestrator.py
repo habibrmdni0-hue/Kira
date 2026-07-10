@@ -29,6 +29,7 @@ from agents import (
     StrategyAgent,
     VoiceAgent,
     ReasoningAgent,
+    DataEntryAgent,
 )
 from orchestrator.router import route as llm_route
 
@@ -79,6 +80,7 @@ _AGENT_REGISTRY = {
     "strategy_agent":   StrategyAgent(),
     "voice_agent":      VoiceAgent(),
     "reasoning_agent":  ReasoningAgent(),
+    "data_entry_agent": DataEntryAgent(),
 }
 
 
@@ -99,8 +101,13 @@ def _node_route(state: KiraState) -> KiraState:
     try:
         intent, agents = llm_route(state["payload"], state["language"])
     except Exception as exc:
-        # Routing failure is non-fatal — fall back to voice agent
-        intent, agents = "routing error — fallback", ["voice_agent"]
+        # Routing failure — do NOT fall back to voice_agent here. With no
+        # agents run, voice_agent would get an empty context and (being a
+        # real LLM) can confidently answer/confirm actions anyway, which
+        # reads as a fabricated success. Surface the failure honestly
+        # instead — see the state["error"] check in _node_synthesize.
+        print(f"[orchestrator] Routing failed: {exc}", flush=True)
+        return {**state, "intent": "routing error", "agents_to_invoke": [], "error": str(exc)}
     return {**state, "intent": intent, "agents_to_invoke": agents}
 
 
@@ -178,14 +185,32 @@ def _node_synthesize(state: KiraState) -> KiraState:
     When voice_agent was not invoked (edge case: routing chose only
     specialist agents), we fall back to the old structured bullet-list
     format so the pipeline never returns an empty response.
+
+    When upstream routing itself failed (state["error"] set, no agents
+    ran at all), return a fixed, non-LLM honest failure message instead
+    of ever letting voice_agent free-associate a reply with zero data —
+    that path used to fabricate confident-sounding "done!" responses.
     """
     results  = state.get("agent_results", {})
     language = state["language"]
 
-    # ── Primary path: voice_agent synthesized everything ───────
-    voice_text = results.get("voice_agent", {}).get("result", {}).get("response_text", "")
-    if voice_text:
-        return {**state, "final_response": voice_text}
+    if state.get("error"):
+        text = (
+            "Maaf, ada gangguan teknis saat memproses permintaan Anda barusan. "
+            "Coba lagi sebentar lagi."
+            if language == "id"
+            else
+            "Sorry, a technical issue occurred while processing your request. "
+            "Please try again shortly."
+        )
+        return {**state, "final_response": text}
+
+    # ── Primary path: voice_agent or data_entry_agent already produced
+    # the final natural-language reply — surface it directly. ─────────
+    for _name in ("voice_agent", "data_entry_agent"):
+        text = results.get(_name, {}).get("result", {}).get("response_text", "")
+        if text:
+            return {**state, "final_response": text}
 
     # ── Fallback: no voice_agent — build structured output ─────
     lines: List[str] = []

@@ -5,6 +5,7 @@ from .inventory_agent import InventoryAgent
 from .strategy_agent import StrategyAgent
 from .voice_agent import VoiceAgent
 from .reasoning_agent import ReasoningAgent
+from .data_entry_agent import DataEntryAgent
 
 __all__ = [
     "BaseAgent",
@@ -16,4 +17,5 @@ __all__ = [
     "StrategyAgent",
     "VoiceAgent",
     "ReasoningAgent",
+    "DataEntryAgent",
 ]

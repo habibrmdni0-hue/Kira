@@ -23,6 +23,12 @@ AGENT_DESCRIPTIONS = {
     "strategy_agent":   "Pricing advice, product performance, promotions, business strategy",
     "voice_agent":      "General conversation, greetings, simple questions, small talk",
     "reasoning_agent":  "Complex multi-step analysis, forecasting, cross-domain reasoning",
+    "data_entry_agent": (
+        "Recording or updating business data the owner is reporting as new "
+        "fact — e.g. 'update stok gula jadi 5kg', 'stok minyak sekarang 2 liter'. "
+        "Use ONLY when the owner is telling Kira new information to SAVE, "
+        "never when they're just asking to view/check existing data."
+    ),
 }
 
 _ROUTER_SYSTEM = """\
@@ -38,6 +44,8 @@ Rules:
 - Always include "voice_agent" when a conversational reply is needed.
 - Use "reasoning_agent" only for complex cross-domain analysis.
 - Multiple agents are fine when the request spans domains.
+- "data_entry_agent" generates its own natural-language reply — use it ALONE
+  (do not combine with "voice_agent") when the owner wants to record/update data.
 - Output raw JSON only — no markdown, no explanation.
 """.format(
     agent_list="\n".join(f'  {k}: {v}' for k, v in AGENT_DESCRIPTIONS.items())
@@ -95,6 +103,12 @@ def _llm_route(payload: str, language: str) -> Tuple[str, List[str]]:
 # ──────────────────────────────────────────────────────────────
 
 _KEYWORD_MAP = [
+    # Data-entry (write) — check BEFORE the read-only "stok" group below so
+    # explicit write phrasing doesn't get routed to inventory_agent instead.
+    (["update stok", "ubah stok", "ganti stok", "catat stok", "stok jadi",
+      "stok sekarang", "set stok", "stok baru", "update stock", "set stock"],
+     "record stock update", ["data_entry_agent"]),
+
     # Strategy/pricing — check BEFORE generic P&L so "produk rugi" + "saran" routes correctly
     (["strategi", "saran", "produk laris", "produk rugi", "harga jual", "promosi",
       "strategy", "pricing", "promotion", "best seller", "losing product", "advice"],
