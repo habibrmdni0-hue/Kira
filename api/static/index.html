@@ -403,18 +403,20 @@
        comfortably fit one 44px-wide character + label without forcing
        the chat area to feel cramped — verified at 1440 and 1366 widths. */
     .agent-sidebar {
-      width: 92px; flex-shrink: 0;
+      width: 240px; flex-shrink: 0;
       position: relative; overflow: hidden;
-      padding: 10px 6px;
+      padding: 14px;
     }
     .track-overlay {
       position: absolute; inset: 0; width: 100%; height: 100%;
       pointer-events: none; z-index: 0;
     }
+    /* Hub-spoke grid: user mascot fixed at the center cell (2,2), the
+       7 agents fill 7 of the 8 surrounding cells (1 spare). */
     .agent-panel {
       position: relative; z-index: 1;
-      display: flex; flex-direction: column; align-items: center;
-      height: 100%; justify-content: space-between;
+      display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr);
+      width: 100%; height: 100%; place-items: center;
     }
     .iso-tile {
       display: flex; flex-direction: column; align-items: center;
@@ -2143,19 +2145,19 @@ async function sendChat() {
    for that hue) and accessory markup differ per agent.
 ═══════════════════════════════════════════════ */
 const AGENT_CHARACTERS = [
-  { id: 'eyes_agent', label: 'Mata', shades: ['#99F6E4','#5EEAD4','#2DD4BF','#14B8A6'],
+  { id: 'eyes_agent', label: 'Mata', pos: {row:1,col:1}, shades: ['#99F6E4','#5EEAD4','#2DD4BF','#14B8A6'],
     accessory: `<circle cx="0" cy="9" r="7" fill="#F1F5F9" stroke="#334155" stroke-width="1.4"/><circle cx="0" cy="9" r="3" fill="#334155"/>` },
-  { id: 'bookkeeper_agent', label: 'Juru Hitung', shades: ['#BBF7D0','#86EFAC','#4ADE80','#22C55E'],
+  { id: 'bookkeeper_agent', label: 'Juru Hitung', pos: {row:1,col:2}, shades: ['#BBF7D0','#86EFAC','#4ADE80','#22C55E'],
     accessory: `<ellipse cx="0" cy="16" rx="8" ry="3" fill="#FDE68A" stroke="#B45309" stroke-width="1"/><ellipse cx="0" cy="11" rx="8" ry="3" fill="#FDE68A" stroke="#B45309" stroke-width="1"/><ellipse cx="0" cy="6" rx="8" ry="3" fill="#FDE68A" stroke="#B45309" stroke-width="1"/>` },
-  { id: 'inventory_agent', label: 'Penjaga Stok', shades: ['#BFDBFE','#93C5FD','#60A5FA','#3B82F6'],
+  { id: 'inventory_agent', label: 'Penjaga Stok', pos: {row:1,col:3}, shades: ['#BFDBFE','#93C5FD','#60A5FA','#3B82F6'],
     accessory: `<polygon points="0,0 10,5 0,10 -10,5" fill="#FDE68A"/><polygon points="-10,5 0,10 0,20 -10,15" fill="#F5C542"/><polygon points="0,10 10,5 10,15 0,20" fill="#D9A62A"/>` },
-  { id: 'strategy_agent', label: 'Strategi', shades: ['#E9D5FF','#D8B4FE','#C084FC','#A855F7'],
+  { id: 'strategy_agent', label: 'Strategi', pos: {row:2,col:1}, shades: ['#E9D5FF','#D8B4FE','#C084FC','#A855F7'],
     accessory: `<rect x="-9" y="10" width="4" height="8" fill="#7C3AED"/><rect x="-2" y="5" width="4" height="13" fill="#7C3AED"/><rect x="5" y="0" width="4" height="18" fill="#7C3AED"/>` },
-  { id: 'data_entry_agent', label: 'Catat Data', shades: ['#FDE68A','#FCD34D','#FBBF24','#F59E0B'],
+  { id: 'data_entry_agent', label: 'Catat Data', pos: {row:2,col:3}, shades: ['#FDE68A','#FCD34D','#FBBF24','#F59E0B'],
     accessory: `<rect x="-6" y="-2" width="12" height="16" rx="1.5" fill="#FEF3C7" stroke="#B45309" stroke-width="1.2"/><line x1="-3" y1="3" x2="3" y2="3" stroke="#B45309" stroke-width="1.2"/><line x1="-3" y1="7" x2="3" y2="7" stroke="#B45309" stroke-width="1.2"/><line x1="-3" y1="11" x2="1" y2="11" stroke="#B45309" stroke-width="1.2"/>` },
-  { id: 'reasoning_agent', label: 'Reasoning', shades: ['#FBCFE8','#F9A8D4','#F472B6','#EC4899'],
+  { id: 'reasoning_agent', label: 'Reasoning', pos: {row:3,col:1}, shades: ['#FBCFE8','#F9A8D4','#F472B6','#EC4899'],
     accessory: `<rect x="-7" y="1" width="14" height="14" rx="2" fill="#334155"/><circle cx="0" cy="8" r="3" fill="#F472B6"/><line x1="-7" y1="5" x2="-10" y2="5" stroke="#334155" stroke-width="1.4"/><line x1="-7" y1="11" x2="-10" y2="11" stroke="#334155" stroke-width="1.4"/><line x1="7" y1="5" x2="10" y2="5" stroke="#334155" stroke-width="1.4"/><line x1="7" y1="11" x2="10" y2="11" stroke="#334155" stroke-width="1.4"/>` },
-  { id: 'voice_agent', label: 'Suara', shades: ['#FECACA','#FCA5A5','#F87171','#EF4444'],
+  { id: 'voice_agent', label: 'Suara', pos: {row:3,col:2}, shades: ['#FECACA','#FCA5A5','#F87171','#EF4444'],
     accessory: `<rect x="-9" y="6" width="3" height="10" rx="1.5" fill="#EF4444"/><rect x="-3" y="0" width="3" height="16" rx="1.5" fill="#EF4444"/><rect x="3" y="4" width="3" height="12" rx="1.5" fill="#EF4444"/>` },
 ];
 
@@ -2164,7 +2166,7 @@ const AGENT_CHARACTERS = [
    reads as "the warung owner", not an 8th data agent. Always idle/static:
    its id never appears in agents_invoked, so _flashAgents never touches it. */
 const USER_MASCOT = {
-  id: 'user_mascot', label: 'Anda', shades: ['#E7E5E4','#D6D3D1','#A8A29E','#78716C'],
+  id: 'user_mascot', label: 'Anda', pos: {row:2,col:2}, shades: ['#E7E5E4','#D6D3D1','#A8A29E','#78716C'],
   visor: { a: '#FEF9C3', b: '#FACC15', c: '#A16207', glow: '#FDE68A', rim: '#FEF9C3' },
   accessory: `<polygon points="0,-2 10,4 0,10 -10,4" fill="#FDE68A"/><rect x="-6" y="4" width="12" height="10" fill="#FEF3C7" stroke="#B45309" stroke-width="1"/><rect x="-2" y="8" width="4" height="6" fill="#B45309"/>`,
 };
@@ -2173,8 +2175,9 @@ function _isoCharTile(cfg) {
   const [c200, c300, c400, c500] = cfg.shades;
   const id = cfg.id;
   const v = cfg.visor || { a: '#A5F3FC', b: '#22D3EE', c: '#0E7490', glow: '#67E8F9', rim: '#CFFAFE' };
+  const gridStyle = cfg.pos ? `grid-row:${cfg.pos.row}; grid-column:${cfg.pos.col};` : '';
   return `
-    <div class="iso-tile" data-agent="${id}" data-track-color="${c500}" title="${cfg.label}">
+    <div class="iso-tile" data-agent="${id}" data-track-color="${c500}" title="${cfg.label}" style="${gridStyle}">
       <svg class="iso-svg" viewBox="0 0 120 150">
         <defs>
           <filter id="blur-${id}" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="4"/></filter>
@@ -2227,12 +2230,13 @@ function _tileAnchor(tile, sidebarRect) {
   };
 }
 function _agentAnchor(tile, sidebarRect) {
-  const panel = document.getElementById('agentPanel');
-  const agents = [...panel.querySelectorAll('.iso-tile:not([data-agent="user_mascot"])')];
-  const i = agents.indexOf(tile);
-  const fan = (i - (agents.length - 1) / 2) * 8; // px, spreads ~±24px for 7 agents
-  const base = _tileAnchor(tile, sidebarRect);
-  return { x: base.x + fan, y: base.y };
+  // Grid layout already gives every agent a distinct (row,col), so no
+  // artificial horizontal fan is needed anymore (that was only to
+  // de-overlap the old single-column layout where every agent shared
+  // the same X). Kept as its own function since _updateTracks/_walkToUser
+  // both call it — easy to reintroduce a nudge here later if two agents
+  // ever end up visually too close.
+  return _tileAnchor(tile, sidebarRect);
 }
 
 /* Draws the static dotted track from every agent to the user mascot —
