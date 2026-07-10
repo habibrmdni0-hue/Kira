@@ -400,26 +400,33 @@
       flex: 1; display: flex; flex-direction: column; overflow: hidden;
     }
     .agent-panel {
-      display: flex; flex-wrap: wrap; gap: 6px;
-      padding: 10px 16px; border-bottom: 1px solid var(--border);
-      flex-shrink: 0;
+      display: flex; flex-wrap: wrap; gap: 4px;
+      padding: 8px 16px; border-bottom: 1px solid var(--border);
+      flex-shrink: 0; justify-content: space-between;
     }
-    .agent-chip {
-      display: flex; align-items: center; gap: 5px;
-      padding: 4px 10px; border-radius: 999px;
-      font-size: 11px; font-weight: 600; color: var(--t3);
-      background: var(--bg); border: 1px solid var(--border);
-      transition: background-color .2s ease, border-color .2s ease, color .2s ease;
+    .iso-tile {
+      display: flex; flex-direction: column; align-items: center;
+      width: 44px; flex-shrink: 0;
     }
-    .agent-chip-dot {
-      width: 6px; height: 6px; border-radius: 50%;
-      background: var(--t3); flex-shrink: 0;
-      transition: background-color .2s ease;
+    .iso-svg { width: 44px; height: 55px; overflow: visible; display: block; }
+    .iso-label {
+      font-size: 9px; font-weight: 700; color: var(--t3);
+      margin-top: 1px; text-align: center; line-height: 1.15;
+      transition: color .3s ease;
     }
-    .agent-chip.active {
-      background: var(--accent); border-color: var(--accent); color: #fff;
-    }
-    .agent-chip.active .agent-chip-dot { background: #fff; }
+    .iso-tile.active .iso-label { color: var(--t1); }
+
+    .iso-glow { opacity: 0; transition: opacity .35s ease; }
+    .iso-tile.active .iso-glow { opacity: 1; }
+
+    .iso-char-group { transition: transform .35s ease; transform-origin: 60px 100px; }
+    .iso-tile.active .iso-char-group { transform: translateY(-11px); }
+
+    .iso-floor { transition: fill .3s ease, stroke .3s ease; }
+    .iso-tile.active .iso-floor { fill: #DCEAFE; stroke: #93C5FD; }
+
+    .iso-visor-glow { transition: opacity .3s ease; opacity: .55; }
+    .iso-tile.active .iso-visor-glow { opacity: 1; }
     .chat-body {
       flex: 1; overflow-y: auto;
       padding: 16px; display: flex; flex-direction: column; gap: 10px;
@@ -1104,15 +1111,7 @@
     <!-- ══ VIEW 4 — Chat ════════════════════════════════ -->
     <div id="view-chat" class="view">
       <div class="card chat-card">
-        <div class="agent-panel" id="agentPanel">
-          <div class="agent-chip" data-agent="eyes_agent"><span class="agent-chip-dot"></span>Mata</div>
-          <div class="agent-chip" data-agent="bookkeeper_agent"><span class="agent-chip-dot"></span>Juru Hitung</div>
-          <div class="agent-chip" data-agent="inventory_agent"><span class="agent-chip-dot"></span>Penjaga Stok</div>
-          <div class="agent-chip" data-agent="strategy_agent"><span class="agent-chip-dot"></span>Strategi</div>
-          <div class="agent-chip" data-agent="data_entry_agent"><span class="agent-chip-dot"></span>Catat Data</div>
-          <div class="agent-chip" data-agent="reasoning_agent"><span class="agent-chip-dot"></span>Reasoning</div>
-          <div class="agent-chip" data-agent="voice_agent"><span class="agent-chip-dot"></span>Suara</div>
-        </div>
+        <div class="agent-panel" id="agentPanel"></div>
         <div class="chat-body" id="chatBody">
           <div class="empty-state" id="chatEmpty">
             <div style="font-size:36px;margin-bottom:12px">💬</div>
@@ -1381,6 +1380,7 @@ function t(k) { return T[lang][k] !== undefined ? T[lang][k] : k; }
 document.addEventListener('DOMContentLoaded', () => {
   fetchHealth();
   refreshAll();
+  _renderAgentPanel();
   setInterval(loadAlerts, 30000);
 });
 
@@ -2071,6 +2071,71 @@ async function sendChat() {
   } finally {
     btn.disabled = false;
   }
+}
+
+/* ═══════════════════════════════════════════════
+   AGENT ACTIVITY PANEL — isometric characters
+   Each agent gets a small blocky isometric robot (body+head cubes,
+   cyan "visor" screen, 1 role-accessory). Idle = resting on its floor
+   tile. Active = levitates + glows (two signals at once), triggered by
+   _flashAgents() using agents_invoked from the /chat response.
+   All 7 share one template — only shades[] (Tailwind 200/300/400/500
+   for that hue) and accessory markup differ per agent.
+═══════════════════════════════════════════════ */
+const AGENT_CHARACTERS = [
+  { id: 'eyes_agent', label: 'Mata', shades: ['#99F6E4','#5EEAD4','#2DD4BF','#14B8A6'],
+    accessory: `<circle cx="0" cy="9" r="7" fill="#F1F5F9" stroke="#334155" stroke-width="1.4"/><circle cx="0" cy="9" r="3" fill="#334155"/>` },
+  { id: 'bookkeeper_agent', label: 'Juru Hitung', shades: ['#BBF7D0','#86EFAC','#4ADE80','#22C55E'],
+    accessory: `<ellipse cx="0" cy="16" rx="8" ry="3" fill="#FDE68A" stroke="#B45309" stroke-width="1"/><ellipse cx="0" cy="11" rx="8" ry="3" fill="#FDE68A" stroke="#B45309" stroke-width="1"/><ellipse cx="0" cy="6" rx="8" ry="3" fill="#FDE68A" stroke="#B45309" stroke-width="1"/>` },
+  { id: 'inventory_agent', label: 'Penjaga Stok', shades: ['#BFDBFE','#93C5FD','#60A5FA','#3B82F6'],
+    accessory: `<polygon points="0,0 10,5 0,10 -10,5" fill="#FDE68A"/><polygon points="-10,5 0,10 0,20 -10,15" fill="#F5C542"/><polygon points="0,10 10,5 10,15 0,20" fill="#D9A62A"/>` },
+  { id: 'strategy_agent', label: 'Strategi', shades: ['#E9D5FF','#D8B4FE','#C084FC','#A855F7'],
+    accessory: `<rect x="-9" y="10" width="4" height="8" fill="#7C3AED"/><rect x="-2" y="5" width="4" height="13" fill="#7C3AED"/><rect x="5" y="0" width="4" height="18" fill="#7C3AED"/>` },
+  { id: 'data_entry_agent', label: 'Catat Data', shades: ['#FDE68A','#FCD34D','#FBBF24','#F59E0B'],
+    accessory: `<rect x="-6" y="-2" width="12" height="16" rx="1.5" fill="#FEF3C7" stroke="#B45309" stroke-width="1.2"/><line x1="-3" y1="3" x2="3" y2="3" stroke="#B45309" stroke-width="1.2"/><line x1="-3" y1="7" x2="3" y2="7" stroke="#B45309" stroke-width="1.2"/><line x1="-3" y1="11" x2="1" y2="11" stroke="#B45309" stroke-width="1.2"/>` },
+  { id: 'reasoning_agent', label: 'Reasoning', shades: ['#FBCFE8','#F9A8D4','#F472B6','#EC4899'],
+    accessory: `<rect x="-7" y="1" width="14" height="14" rx="2" fill="#334155"/><circle cx="0" cy="8" r="3" fill="#F472B6"/><line x1="-7" y1="5" x2="-10" y2="5" stroke="#334155" stroke-width="1.4"/><line x1="-7" y1="11" x2="-10" y2="11" stroke="#334155" stroke-width="1.4"/><line x1="7" y1="5" x2="10" y2="5" stroke="#334155" stroke-width="1.4"/><line x1="7" y1="11" x2="10" y2="11" stroke="#334155" stroke-width="1.4"/>` },
+  { id: 'voice_agent', label: 'Suara', shades: ['#FECACA','#FCA5A5','#F87171','#EF4444'],
+    accessory: `<rect x="-9" y="6" width="3" height="10" rx="1.5" fill="#EF4444"/><rect x="-3" y="0" width="3" height="16" rx="1.5" fill="#EF4444"/><rect x="3" y="4" width="3" height="12" rx="1.5" fill="#EF4444"/>` },
+];
+
+function _isoCharTile(cfg) {
+  const [c200, c300, c400, c500] = cfg.shades;
+  const id = cfg.id;
+  return `
+    <div class="iso-tile" data-agent="${id}" title="${cfg.label}">
+      <svg class="iso-svg" viewBox="0 0 120 150">
+        <defs>
+          <filter id="blur-${id}" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="4"/></filter>
+          <filter id="visorBlur-${id}" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="1.4"/></filter>
+          <linearGradient id="visorGrad-${id}" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#A5F3FC"/><stop offset="55%" stop-color="#22D3EE"/><stop offset="100%" stop-color="#0E7490"/>
+          </linearGradient>
+        </defs>
+        <ellipse class="iso-glow" cx="60" cy="114" rx="28" ry="9" fill="${c500}" opacity="0.30" filter="url(#blur-${id})"/>
+        <polygon class="iso-floor" points="60,100 96,118 60,136 24,118" fill="#F0EFEA" stroke="#E4E2DB" stroke-width="1.5"/>
+        <g class="iso-char-group">
+          <g transform="translate(78,72)">${cfg.accessory}</g>
+          <polygon points="60,50 82,61 60,72 38,61" fill="${c300}"/>
+          <polygon points="38,61 60,72 60,106 38,95" fill="${c400}"/>
+          <polygon points="60,72 82,61 82,95 60,106" fill="${c500}"/>
+          <polygon points="60,32 74,39 60,46 46,39" fill="${c200}"/>
+          <polygon points="46,39 60,46 60,60 46,53" fill="${c300}"/>
+          <polygon points="60,46 74,39 74,53 60,60" fill="${c400}"/>
+          <polygon class="iso-visor-glow" points="61.3,48.4 72.7,43 72.7,51.7 61.3,57.1" fill="#67E8F9" filter="url(#visorBlur-${id})"/>
+          <polygon points="62.1,49.15 71.9,44.25 71.9,50.55 62.1,55.45" fill="url(#visorGrad-${id})"/>
+          <polygon points="62.1,49.15 71.9,44.25 71.9,50.55 62.1,55.45" fill="none" stroke="#CFFAFE" stroke-width="0.8"/>
+          <line x1="63.6" y1="47.6" x2="68.4" y2="45.1" stroke="#ffffff" stroke-width="0.9" opacity="0.85" stroke-linecap="round"/>
+        </g>
+      </svg>
+      <div class="iso-label">${esc(cfg.label)}</div>
+    </div>`;
+}
+
+function _renderAgentPanel() {
+  const panel = document.getElementById('agentPanel');
+  if (!panel) return;
+  panel.innerHTML = AGENT_CHARACTERS.map(_isoCharTile).join('');
 }
 
 /* Agent activity panel — briefly highlight whichever agents the
