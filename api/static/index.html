@@ -408,6 +408,7 @@
       display: flex; flex-direction: column; align-items: center;
       width: 44px; flex-shrink: 0;
     }
+    .iso-tile.walking { z-index: 20; }
     .iso-svg { width: 44px; height: 55px; overflow: visible; display: block; }
     .iso-label {
       font-size: 9px; font-weight: 700; color: var(--t3);
@@ -419,14 +420,48 @@
     .iso-glow { opacity: 0; transition: opacity .35s ease; }
     .iso-tile.active .iso-glow { opacity: 1; }
 
-    .iso-char-group { transition: transform .35s ease; transform-origin: 60px 100px; }
-    .iso-tile.active .iso-char-group { transform: translateY(-11px); }
+    /* Idle/active no longer set position directly — walking (below) owns
+       the character's transform while it plays; .active only controls the
+       "this station is relevant" cues (floor tint, glow, visor, label). */
+    .iso-char-group { transform-origin: 60px 100px; }
 
     .iso-floor { transition: fill .3s ease, stroke .3s ease; }
     .iso-tile.active .iso-floor { fill: #DCEAFE; stroke: #93C5FD; }
 
     .iso-visor-glow { transition: opacity .3s ease; opacity: .55; }
     .iso-tile.active .iso-visor-glow { opacity: 1; }
+
+    /* Walk-to-user-and-report — plays once per activation. --walk-dx is
+       set from JS per instance (distance to the user mascot varies by
+       which agent tile is active). Two small bounces at the destination
+       read as a "reporting" nod.
+
+       Easing is set PER keyframe stop (not one curve for the whole 1.8s):
+       brisk ease-out leaving home, a snappy back-and-forth for the two
+       report bounces, then a calmer ease settling back home — one global
+       curve made the bounces feel mushy instead of like a little nod. */
+    .iso-tile.walking .iso-char-group {
+      animation: isoWalkReport 1.8s 1;
+    }
+    @keyframes isoWalkReport {
+      0%   { transform: translate(0, 0) scale(1, 1);
+             animation-timing-function: cubic-bezier(.3,.6,.35,1); }
+      16%  { transform: translate(calc(var(--walk-dx, 0) * .55), -10px) scale(1.05, .95);
+             animation-timing-function: cubic-bezier(.3,.6,.35,1); }
+      30%  { transform: translate(var(--walk-dx, 0), -9px) scale(1, 1);
+             animation-timing-function: cubic-bezier(.36,.07,.19,.97); }
+      38%  { transform: translate(var(--walk-dx, 0), -15px) scale(1, 1);
+             animation-timing-function: cubic-bezier(.36,.07,.19,.97); }
+      46%  { transform: translate(var(--walk-dx, 0), -9px) scale(1, 1);
+             animation-timing-function: cubic-bezier(.36,.07,.19,.97); }
+      54%  { transform: translate(var(--walk-dx, 0), -15px) scale(1, 1);
+             animation-timing-function: cubic-bezier(.4,0,.2,1); }
+      64%  { transform: translate(var(--walk-dx, 0), -9px) scale(1, 1);
+             animation-timing-function: cubic-bezier(.4,0,.2,1); }
+      84%  { transform: translate(calc(var(--walk-dx, 0) * .3), -8px) scale(.96, 1.04);
+             animation-timing-function: cubic-bezier(.4,0,.2,1); }
+      100% { transform: translate(0, 0) scale(1, 1); }
+    }
     .chat-body {
       flex: 1; overflow-y: auto;
       padding: 16px; display: flex; flex-direction: column; gap: 10px;
@@ -2099,9 +2134,20 @@ const AGENT_CHARACTERS = [
     accessory: `<rect x="-9" y="6" width="3" height="10" rx="1.5" fill="#EF4444"/><rect x="-3" y="0" width="3" height="16" rx="1.5" fill="#EF4444"/><rect x="3" y="4" width="3" height="12" rx="1.5" fill="#EF4444"/>` },
 ];
 
+/* The "user" mascot — same construction, warm neutral palette + a warm
+   gold visor (vs. the agents' cyan) and a little storefront icon so it
+   reads as "the warung owner", not an 8th data agent. Always idle/static:
+   its id never appears in agents_invoked, so _flashAgents never touches it. */
+const USER_MASCOT = {
+  id: 'user_mascot', label: 'Anda', shades: ['#E7E5E4','#D6D3D1','#A8A29E','#78716C'],
+  visor: { a: '#FEF9C3', b: '#FACC15', c: '#A16207', glow: '#FDE68A', rim: '#FEF9C3' },
+  accessory: `<polygon points="0,-2 10,4 0,10 -10,4" fill="#FDE68A"/><rect x="-6" y="4" width="12" height="10" fill="#FEF3C7" stroke="#B45309" stroke-width="1"/><rect x="-2" y="8" width="4" height="6" fill="#B45309"/>`,
+};
+
 function _isoCharTile(cfg) {
   const [c200, c300, c400, c500] = cfg.shades;
   const id = cfg.id;
+  const v = cfg.visor || { a: '#A5F3FC', b: '#22D3EE', c: '#0E7490', glow: '#67E8F9', rim: '#CFFAFE' };
   return `
     <div class="iso-tile" data-agent="${id}" title="${cfg.label}">
       <svg class="iso-svg" viewBox="0 0 120 150">
@@ -2109,7 +2155,7 @@ function _isoCharTile(cfg) {
           <filter id="blur-${id}" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="4"/></filter>
           <filter id="visorBlur-${id}" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="1.4"/></filter>
           <linearGradient id="visorGrad-${id}" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stop-color="#A5F3FC"/><stop offset="55%" stop-color="#22D3EE"/><stop offset="100%" stop-color="#0E7490"/>
+            <stop offset="0%" stop-color="${v.a}"/><stop offset="55%" stop-color="${v.b}"/><stop offset="100%" stop-color="${v.c}"/>
           </linearGradient>
         </defs>
         <ellipse class="iso-glow" cx="60" cy="114" rx="28" ry="9" fill="${c500}" opacity="0.30" filter="url(#blur-${id})"/>
@@ -2122,9 +2168,9 @@ function _isoCharTile(cfg) {
           <polygon points="60,32 74,39 60,46 46,39" fill="${c200}"/>
           <polygon points="46,39 60,46 60,60 46,53" fill="${c300}"/>
           <polygon points="60,46 74,39 74,53 60,60" fill="${c400}"/>
-          <polygon class="iso-visor-glow" points="61.3,48.4 72.7,43 72.7,51.7 61.3,57.1" fill="#67E8F9" filter="url(#visorBlur-${id})"/>
+          <polygon class="iso-visor-glow" points="61.3,48.4 72.7,43 72.7,51.7 61.3,57.1" fill="${v.glow}" filter="url(#visorBlur-${id})"/>
           <polygon points="62.1,49.15 71.9,44.25 71.9,50.55 62.1,55.45" fill="url(#visorGrad-${id})"/>
-          <polygon points="62.1,49.15 71.9,44.25 71.9,50.55 62.1,55.45" fill="none" stroke="#CFFAFE" stroke-width="0.8"/>
+          <polygon points="62.1,49.15 71.9,44.25 71.9,50.55 62.1,55.45" fill="none" stroke="${v.rim}" stroke-width="0.8"/>
           <line x1="63.6" y1="47.6" x2="68.4" y2="45.1" stroke="#ffffff" stroke-width="0.9" opacity="0.85" stroke-linecap="round"/>
         </g>
       </svg>
@@ -2135,20 +2181,51 @@ function _isoCharTile(cfg) {
 function _renderAgentPanel() {
   const panel = document.getElementById('agentPanel');
   if (!panel) return;
-  panel.innerHTML = AGENT_CHARACTERS.map(_isoCharTile).join('');
+  panel.innerHTML = AGENT_CHARACTERS.map(_isoCharTile).join('') + _isoCharTile(USER_MASCOT);
+}
+
+/* Walk-to-user-and-report: computed per instance since the horizontal
+   distance to the user mascot differs by which agent tile is active.
+   Agents don't all aim for the same exact spot — each travels ~70% of
+   its own distance to the mascot, so several active at once naturally
+   fan out near (not on top of) each other instead of colliding. */
+function _walkToUser(tile) {
+  const panel = document.getElementById('agentPanel');
+  const userTile = panel && panel.querySelector('[data-agent="user_mascot"]');
+  if (!userTile || tile === userTile) return;
+  const a = tile.getBoundingClientRect();
+  const b = userTile.getBoundingClientRect();
+  const dx = (b.left - a.left) * 0.7;
+  tile.style.setProperty('--walk-dx', `${dx}px`);
+  tile.classList.remove('walking');
+  void tile.offsetWidth; // restart the animation if it's already mid-walk
+  tile.classList.add('walking');
+  clearTimeout(tile._walkTimer);
+  tile._walkTimer = setTimeout(() => tile.classList.remove('walking'), 1800);
 }
 
 /* Agent activity panel — briefly highlight whichever agents the
-   orchestrator invoked for the last chat turn, all at once. */
+   orchestrator invoked for the last chat turn, all at once.
+
+   Highlighting (glow/floor/label) still applies to all of them the
+   instant the response lands — that's the "these agents were involved"
+   signal, and it shouldn't wait. Only the WALK is staggered a little
+   per agent (index * 130ms): starting several walks in perfect lockstep
+   reads as robotic, and since _walkToUser() already aims each agent at
+   ~70% of its own distance to the mascot (not one shared endpoint),
+   the stagger plus that spread is enough to keep multiple agents from
+   visually bunching up on top of each other near the user. */
 function _flashAgents(agentNames) {
   const panel = document.getElementById('agentPanel');
   if (!panel) return;
-  agentNames.forEach(name => {
+  agentNames.forEach((name, i) => {
     const chip = panel.querySelector(`[data-agent="${name}"]`);
     if (!chip) return;
     chip.classList.add('active');
     clearTimeout(chip._flashTimer);
     chip._flashTimer = setTimeout(() => chip.classList.remove('active'), 2500);
+    clearTimeout(chip._walkStagger);
+    chip._walkStagger = setTimeout(() => _walkToUser(chip), i * 130);
   });
 }
 
