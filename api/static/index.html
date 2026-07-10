@@ -205,7 +205,7 @@
        padding (18px, still present — only padding-bottom is zeroed by
        .no-scroll above) must both be subtracted, or the chat card
        overflows past the viewport bottom and clips the input row. */
-    #view-chat.active { display: flex; flex-direction: row; gap: 14px; height: calc(100vh - 80px - 18px); }
+    #view-chat.active { display: flex; flex-direction: column; height: calc(100vh - 80px - 18px); }
 
     /* ─────────────────── CARDS ────────────────────────── */
     .card {
@@ -399,86 +399,27 @@
     .chat-card {
       flex: 1; display: flex; flex-direction: column; overflow: hidden;
     }
-    /* Sidebar: fixed-width column to the right of chat-card. Sized to
-       comfortably fit one 44px-wide character + label without forcing
-       the chat area to feel cramped — verified at 1440 and 1366 widths. */
-    .agent-sidebar {
-      width: 240px; flex-shrink: 0;
-      position: relative; overflow: hidden;
-      padding: 14px;
-    }
-    .track-overlay {
-      position: absolute; inset: 0; width: 100%; height: 100%;
-      pointer-events: none; z-index: 0;
-    }
-    /* Hub-spoke grid: user mascot fixed at the center cell (2,2), the
-       7 agents fill 7 of the 8 surrounding cells (1 spare). */
     .agent-panel {
-      position: relative; z-index: 1;
-      display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr);
-      width: 100%; height: 100%; place-items: center;
+      display: flex; flex-wrap: wrap; gap: 6px;
+      padding: 10px 16px; border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
     }
-    .iso-tile {
-      display: flex; flex-direction: column; align-items: center;
-      width: 44px; flex-shrink: 0;
+    .agent-chip {
+      display: flex; align-items: center; gap: 5px;
+      padding: 4px 10px; border-radius: 999px;
+      font-size: 11px; font-weight: 600; color: var(--t3);
+      background: var(--bg); border: 1px solid var(--border);
+      transition: background-color .2s ease, border-color .2s ease, color .2s ease;
     }
-    .iso-tile.walking { z-index: 20; }
-    .iso-svg { width: 44px; height: 55px; overflow: visible; display: block; }
-    .iso-label {
-      font-size: 9px; font-weight: 700; color: var(--t3);
-      margin-top: 1px; text-align: center; line-height: 1.15;
-      transition: color .3s ease;
+    .agent-chip-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--t3); flex-shrink: 0;
+      transition: background-color .2s ease;
     }
-    .iso-tile.active .iso-label { color: var(--t1); }
-
-    .iso-glow { opacity: 0; transition: opacity .35s ease; }
-    .iso-tile.active .iso-glow { opacity: 1; }
-
-    /* Idle/active no longer set position directly — walking (below) owns
-       the character's transform while it plays; .active only controls the
-       "this station is relevant" cues (floor tint, glow, visor, label). */
-    .iso-char-group { transform-origin: 60px 100px; }
-
-    .iso-floor { transition: fill .3s ease, stroke .3s ease; }
-    .iso-tile.active .iso-floor { fill: #DCEAFE; stroke: #93C5FD; }
-
-    .iso-visor-glow { transition: opacity .3s ease; opacity: .55; }
-    .iso-tile.active .iso-visor-glow { opacity: 1; }
-
-    /* Walk-to-user-and-report — plays once per activation, along the
-       straight track from this agent's fixed spot to the user mascot's.
-       --walk-dx/--walk-dy are set from JS per instance (both axes now
-       that agents sit in a vertical column at different heights, not a
-       single horizontal row). The -Npx bounce offsets are added ON TOP
-       of --walk-dy at each stop — the "reporting" nod stays a vertical
-       hop regardless of the track's own angle.
-
-       Easing is set PER keyframe stop (not one curve for the whole 1.8s):
-       brisk ease-out leaving home, a snappy back-and-forth for the two
-       report bounces, then a calmer ease settling back home — one global
-       curve made the bounces feel mushy instead of like a little nod. */
-    .iso-tile.walking .iso-char-group {
-      animation: isoWalkReport 1.8s 1;
+    .agent-chip.active {
+      background: var(--accent); border-color: var(--accent); color: #fff;
     }
-    @keyframes isoWalkReport {
-      0%   { transform: translate(0, 0) scale(1, 1);
-             animation-timing-function: cubic-bezier(.3,.6,.35,1); }
-      16%  { transform: translate(calc(var(--walk-dx, 0) * .55), calc(var(--walk-dy, 0) * .55 - 10px)) scale(1.05, .95);
-             animation-timing-function: cubic-bezier(.3,.6,.35,1); }
-      30%  { transform: translate(var(--walk-dx, 0), calc(var(--walk-dy, 0) - 9px)) scale(1, 1);
-             animation-timing-function: cubic-bezier(.36,.07,.19,.97); }
-      38%  { transform: translate(var(--walk-dx, 0), calc(var(--walk-dy, 0) - 15px)) scale(1, 1);
-             animation-timing-function: cubic-bezier(.36,.07,.19,.97); }
-      46%  { transform: translate(var(--walk-dx, 0), calc(var(--walk-dy, 0) - 9px)) scale(1, 1);
-             animation-timing-function: cubic-bezier(.36,.07,.19,.97); }
-      54%  { transform: translate(var(--walk-dx, 0), calc(var(--walk-dy, 0) - 15px)) scale(1, 1);
-             animation-timing-function: cubic-bezier(.4,0,.2,1); }
-      64%  { transform: translate(var(--walk-dx, 0), calc(var(--walk-dy, 0) - 9px)) scale(1, 1);
-             animation-timing-function: cubic-bezier(.4,0,.2,1); }
-      84%  { transform: translate(calc(var(--walk-dx, 0) * .3), calc(var(--walk-dy, 0) * .3 - 8px)) scale(.96, 1.04);
-             animation-timing-function: cubic-bezier(.4,0,.2,1); }
-      100% { transform: translate(0, 0) scale(1, 1); }
-    }
+    .agent-chip.active .agent-chip-dot { background: #fff; }
     .chat-body {
       flex: 1; overflow-y: auto;
       padding: 16px; display: flex; flex-direction: column; gap: 10px;
@@ -1163,6 +1104,15 @@
     <!-- ══ VIEW 4 — Chat ════════════════════════════════ -->
     <div id="view-chat" class="view">
       <div class="card chat-card">
+        <div class="agent-panel" id="agentPanel">
+          <div class="agent-chip" data-agent="eyes_agent"><span class="agent-chip-dot"></span>Mata</div>
+          <div class="agent-chip" data-agent="bookkeeper_agent"><span class="agent-chip-dot"></span>Juru Hitung</div>
+          <div class="agent-chip" data-agent="inventory_agent"><span class="agent-chip-dot"></span>Penjaga Stok</div>
+          <div class="agent-chip" data-agent="strategy_agent"><span class="agent-chip-dot"></span>Strategi</div>
+          <div class="agent-chip" data-agent="data_entry_agent"><span class="agent-chip-dot"></span>Catat Data</div>
+          <div class="agent-chip" data-agent="reasoning_agent"><span class="agent-chip-dot"></span>Reasoning</div>
+          <div class="agent-chip" data-agent="voice_agent"><span class="agent-chip-dot"></span>Suara</div>
+        </div>
         <div class="chat-body" id="chatBody">
           <div class="empty-state" id="chatEmpty">
             <div style="font-size:36px;margin-bottom:12px">💬</div>
@@ -1182,10 +1132,6 @@
           <input type="file" id="fileInput" accept="image/*" style="display:none"
                  onchange="onReceiptFile(this)">
         </div>
-      </div>
-      <div class="card agent-sidebar" id="agentSidebar">
-        <svg class="track-overlay" id="trackOverlay"></svg>
-        <div class="agent-panel" id="agentPanel"></div>
       </div>
     </div>
 
@@ -1435,7 +1381,6 @@ function t(k) { return T[lang][k] !== undefined ? T[lang][k] : k; }
 document.addEventListener('DOMContentLoaded', () => {
   fetchHealth();
   refreshAll();
-  _renderAgentPanel();
   setInterval(loadAlerts, 30000);
 });
 
@@ -1470,13 +1415,6 @@ function showView(name) {
 
   // Chat view needs no-scroll on the content wrapper (it manages its own scroll)
   document.getElementById('viewContent').classList.toggle('no-scroll', name === 'chat');
-
-  // The track overlay is computed from live layout positions, which are
-  // all 0 while this view is display:none — recompute now that it's
-  // actually visible (also covers first-ever navigation to Chat Kira,
-  // since _renderAgentPanel() ran once at page load while everything
-  // was still hidden behind the landing page).
-  if (name === 'chat') _updateTracks();
 
   // Update view header
   document.getElementById('viewTitle').textContent = T[lang].vTitle[name];
@@ -2135,187 +2073,17 @@ async function sendChat() {
   }
 }
 
-/* ═══════════════════════════════════════════════
-   AGENT ACTIVITY PANEL — isometric characters
-   Each agent gets a small blocky isometric robot (body+head cubes,
-   cyan "visor" screen, 1 role-accessory). Idle = resting on its floor
-   tile. Active = levitates + glows (two signals at once), triggered by
-   _flashAgents() using agents_invoked from the /chat response.
-   All 7 share one template — only shades[] (Tailwind 200/300/400/500
-   for that hue) and accessory markup differ per agent.
-═══════════════════════════════════════════════ */
-const AGENT_CHARACTERS = [
-  { id: 'eyes_agent', label: 'Mata', pos: {row:1,col:1}, shades: ['#99F6E4','#5EEAD4','#2DD4BF','#14B8A6'],
-    accessory: `<circle cx="0" cy="9" r="7" fill="#F1F5F9" stroke="#334155" stroke-width="1.4"/><circle cx="0" cy="9" r="3" fill="#334155"/>` },
-  { id: 'bookkeeper_agent', label: 'Juru Hitung', pos: {row:1,col:2}, shades: ['#BBF7D0','#86EFAC','#4ADE80','#22C55E'],
-    accessory: `<ellipse cx="0" cy="16" rx="8" ry="3" fill="#FDE68A" stroke="#B45309" stroke-width="1"/><ellipse cx="0" cy="11" rx="8" ry="3" fill="#FDE68A" stroke="#B45309" stroke-width="1"/><ellipse cx="0" cy="6" rx="8" ry="3" fill="#FDE68A" stroke="#B45309" stroke-width="1"/>` },
-  { id: 'inventory_agent', label: 'Penjaga Stok', pos: {row:1,col:3}, shades: ['#BFDBFE','#93C5FD','#60A5FA','#3B82F6'],
-    accessory: `<polygon points="0,0 10,5 0,10 -10,5" fill="#FDE68A"/><polygon points="-10,5 0,10 0,20 -10,15" fill="#F5C542"/><polygon points="0,10 10,5 10,15 0,20" fill="#D9A62A"/>` },
-  { id: 'strategy_agent', label: 'Strategi', pos: {row:2,col:1}, shades: ['#E9D5FF','#D8B4FE','#C084FC','#A855F7'],
-    accessory: `<rect x="-9" y="10" width="4" height="8" fill="#7C3AED"/><rect x="-2" y="5" width="4" height="13" fill="#7C3AED"/><rect x="5" y="0" width="4" height="18" fill="#7C3AED"/>` },
-  { id: 'data_entry_agent', label: 'Catat Data', pos: {row:2,col:3}, shades: ['#FDE68A','#FCD34D','#FBBF24','#F59E0B'],
-    accessory: `<rect x="-6" y="-2" width="12" height="16" rx="1.5" fill="#FEF3C7" stroke="#B45309" stroke-width="1.2"/><line x1="-3" y1="3" x2="3" y2="3" stroke="#B45309" stroke-width="1.2"/><line x1="-3" y1="7" x2="3" y2="7" stroke="#B45309" stroke-width="1.2"/><line x1="-3" y1="11" x2="1" y2="11" stroke="#B45309" stroke-width="1.2"/>` },
-  { id: 'reasoning_agent', label: 'Reasoning', pos: {row:3,col:1}, shades: ['#FBCFE8','#F9A8D4','#F472B6','#EC4899'],
-    accessory: `<rect x="-7" y="1" width="14" height="14" rx="2" fill="#334155"/><circle cx="0" cy="8" r="3" fill="#F472B6"/><line x1="-7" y1="5" x2="-10" y2="5" stroke="#334155" stroke-width="1.4"/><line x1="-7" y1="11" x2="-10" y2="11" stroke="#334155" stroke-width="1.4"/><line x1="7" y1="5" x2="10" y2="5" stroke="#334155" stroke-width="1.4"/><line x1="7" y1="11" x2="10" y2="11" stroke="#334155" stroke-width="1.4"/>` },
-  { id: 'voice_agent', label: 'Suara', pos: {row:3,col:2}, shades: ['#FECACA','#FCA5A5','#F87171','#EF4444'],
-    accessory: `<rect x="-9" y="6" width="3" height="10" rx="1.5" fill="#EF4444"/><rect x="-3" y="0" width="3" height="16" rx="1.5" fill="#EF4444"/><rect x="3" y="4" width="3" height="12" rx="1.5" fill="#EF4444"/>` },
-];
-
-/* The "user" mascot — same construction, warm neutral palette + a warm
-   gold visor (vs. the agents' cyan) and a little storefront icon so it
-   reads as "the warung owner", not an 8th data agent. Always idle/static:
-   its id never appears in agents_invoked, so _flashAgents never touches it. */
-const USER_MASCOT = {
-  id: 'user_mascot', label: 'Anda', pos: {row:2,col:2}, shades: ['#E7E5E4','#D6D3D1','#A8A29E','#78716C'],
-  visor: { a: '#FEF9C3', b: '#FACC15', c: '#A16207', glow: '#FDE68A', rim: '#FEF9C3' },
-  accessory: `<polygon points="0,-2 10,4 0,10 -10,4" fill="#FDE68A"/><rect x="-6" y="4" width="12" height="10" fill="#FEF3C7" stroke="#B45309" stroke-width="1"/><rect x="-2" y="8" width="4" height="6" fill="#B45309"/>`,
-};
-
-function _isoCharTile(cfg) {
-  const [c200, c300, c400, c500] = cfg.shades;
-  const id = cfg.id;
-  const v = cfg.visor || { a: '#A5F3FC', b: '#22D3EE', c: '#0E7490', glow: '#67E8F9', rim: '#CFFAFE' };
-  const gridStyle = cfg.pos ? `grid-row:${cfg.pos.row}; grid-column:${cfg.pos.col};` : '';
-  return `
-    <div class="iso-tile" data-agent="${id}" data-track-color="${c500}" title="${cfg.label}" style="${gridStyle}">
-      <svg class="iso-svg" viewBox="0 0 120 150">
-        <defs>
-          <filter id="blur-${id}" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="4"/></filter>
-          <filter id="visorBlur-${id}" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="1.4"/></filter>
-          <linearGradient id="visorGrad-${id}" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stop-color="${v.a}"/><stop offset="55%" stop-color="${v.b}"/><stop offset="100%" stop-color="${v.c}"/>
-          </linearGradient>
-        </defs>
-        <ellipse class="iso-glow" cx="60" cy="114" rx="28" ry="9" fill="${c500}" opacity="0.30" filter="url(#blur-${id})"/>
-        <polygon class="iso-floor" points="60,100 96,118 60,136 24,118" fill="#F0EFEA" stroke="#E4E2DB" stroke-width="1.5"/>
-        <g class="iso-char-group">
-          <g transform="translate(78,72)">${cfg.accessory}</g>
-          <polygon points="60,50 82,61 60,72 38,61" fill="${c300}"/>
-          <polygon points="38,61 60,72 60,106 38,95" fill="${c400}"/>
-          <polygon points="60,72 82,61 82,95 60,106" fill="${c500}"/>
-          <polygon points="60,32 74,39 60,46 46,39" fill="${c200}"/>
-          <polygon points="46,39 60,46 60,60 46,53" fill="${c300}"/>
-          <polygon points="60,46 74,39 74,53 60,60" fill="${c400}"/>
-          <polygon class="iso-visor-glow" points="61.3,48.4 72.7,43 72.7,51.7 61.3,57.1" fill="${v.glow}" filter="url(#visorBlur-${id})"/>
-          <polygon points="62.1,49.15 71.9,44.25 71.9,50.55 62.1,55.45" fill="url(#visorGrad-${id})"/>
-          <polygon points="62.1,49.15 71.9,44.25 71.9,50.55 62.1,55.45" fill="none" stroke="${v.rim}" stroke-width="0.8"/>
-          <line x1="63.6" y1="47.6" x2="68.4" y2="45.1" stroke="#ffffff" stroke-width="0.9" opacity="0.85" stroke-linecap="round"/>
-        </g>
-      </svg>
-      <div class="iso-label">${esc(cfg.label)}</div>
-    </div>`;
-}
-
-function _renderAgentPanel() {
-  const panel = document.getElementById('agentPanel');
-  if (!panel) return;
-  panel.innerHTML = AGENT_CHARACTERS.map(_isoCharTile).join('') + _isoCharTile(USER_MASCOT);
-  _updateTracks();
-}
-
-/* A tile's raw anchor is the center of its floor tile, in coordinates
-   local to #agentSidebar (the positioning parent for both the track
-   overlay and the walk transforms). Agents sit in a single vertical
-   column directly above the user mascot, so their floor-center X is
-   IDENTICAL for all 7 — without correction every track would draw as
-   one overlapping vertical line. _agentAnchor fans each agent's anchor
-   out horizontally by a small per-index offset (centered on the column)
-   so each track — and the walk that follows it — is visually distinct. */
-function _tileAnchor(tile, sidebarRect) {
-  const floor = tile.querySelector('.iso-floor');
-  const r = floor.getBoundingClientRect();
-  return {
-    x: r.left + r.width / 2 - sidebarRect.left,
-    y: r.top + r.height / 2 - sidebarRect.top,
-  };
-}
-function _agentAnchor(tile, sidebarRect) {
-  // Grid layout already gives every agent a distinct (row,col), so no
-  // artificial horizontal fan is needed anymore (that was only to
-  // de-overlap the old single-column layout where every agent shared
-  // the same X). Kept as its own function since _updateTracks/_walkToUser
-  // both call it — easy to reintroduce a nudge here later if two agents
-  // ever end up visually too close.
-  return _tileAnchor(tile, sidebarRect);
-}
-
-/* Draws the static dotted track from every agent to the user mascot —
-   the "map" the user sees before anything animates. Each track is
-   tinted with that agent's own color at low opacity so it's legible
-   which line belongs to which character. Recomputed on render and on
-   window resize, since it depends on live layout positions. */
-function _updateTracks() {
-  const sidebar = document.getElementById('agentSidebar');
-  const overlay = document.getElementById('trackOverlay');
-  const panel = document.getElementById('agentPanel');
-  if (!sidebar || !overlay || !panel) return;
-
-  const sbRect = sidebar.getBoundingClientRect();
-  overlay.setAttribute('width', sbRect.width);
-  overlay.setAttribute('height', sbRect.height);
-  overlay.setAttribute('viewBox', `0 0 ${sbRect.width} ${sbRect.height}`);
-
-  const userTile = panel.querySelector('[data-agent="user_mascot"]');
-  if (!userTile) return;
-  const u = _tileAnchor(userTile, sbRect);
-
-  let lines = '';
-  panel.querySelectorAll('.iso-tile:not([data-agent="user_mascot"])').forEach(tile => {
-    const a = _agentAnchor(tile, sbRect);
-    const color = tile.dataset.trackColor || '#94A3B8';
-    lines += `<line x1="${a.x.toFixed(1)}" y1="${a.y.toFixed(1)}" x2="${u.x.toFixed(1)}" y2="${u.y.toFixed(1)}" `
-            + `stroke="${color}" stroke-width="1.5" stroke-dasharray="2.5 4" stroke-linecap="round" opacity="0.4"/>`;
-  });
-  overlay.innerHTML = lines;
-}
-
-/* Walk-to-user-and-report: moves along the exact same straight line as
-   this agent's static track (computed fresh each time, not cached from
-   _updateTracks, so it stays correct even if the window was resized
-   between renders). Agents don't all aim for the mascot's exact spot —
-   each travels ~70% of its own distance, so several active at once
-   naturally fan out near (not on top of) each other instead of colliding. */
-function _walkToUser(tile) {
-  const sidebar = document.getElementById('agentSidebar');
-  const panel = document.getElementById('agentPanel');
-  const userTile = panel && panel.querySelector('[data-agent="user_mascot"]');
-  if (!sidebar || !userTile || tile === userTile) return;
-  const sbRect = sidebar.getBoundingClientRect();
-  const a = _agentAnchor(tile, sbRect);
-  const b = _tileAnchor(userTile, sbRect);
-  tile.style.setProperty('--walk-dx', `${(b.x - a.x) * 0.7}px`);
-  tile.style.setProperty('--walk-dy', `${(b.y - a.y) * 0.7}px`);
-  tile.classList.remove('walking');
-  void tile.offsetWidth; // restart the animation if it's already mid-walk
-  tile.classList.add('walking');
-  clearTimeout(tile._walkTimer);
-  tile._walkTimer = setTimeout(() => tile.classList.remove('walking'), 1800);
-}
-
-window.addEventListener('resize', () => { if (document.getElementById('agentSidebar')) _updateTracks(); });
-
 /* Agent activity panel — briefly highlight whichever agents the
-   orchestrator invoked for the last chat turn, all at once.
-
-   Highlighting (glow/floor/label) still applies to all of them the
-   instant the response lands — that's the "these agents were involved"
-   signal, and it shouldn't wait. Only the WALK is staggered a little
-   per agent (index * 130ms): starting several walks in perfect lockstep
-   reads as robotic, and since _walkToUser() already aims each agent at
-   ~70% of its own distance to the mascot (not one shared endpoint),
-   the stagger plus that spread is enough to keep multiple agents from
-   visually bunching up on top of each other near the user. */
+   orchestrator invoked for the last chat turn, all at once. */
 function _flashAgents(agentNames) {
   const panel = document.getElementById('agentPanel');
   if (!panel) return;
-  agentNames.forEach((name, i) => {
+  agentNames.forEach(name => {
     const chip = panel.querySelector(`[data-agent="${name}"]`);
     if (!chip) return;
     chip.classList.add('active');
     clearTimeout(chip._flashTimer);
     chip._flashTimer = setTimeout(() => chip.classList.remove('active'), 2500);
-    clearTimeout(chip._walkStagger);
-    chip._walkStagger = setTimeout(() => _walkToUser(chip), i * 130);
   });
 }
 
