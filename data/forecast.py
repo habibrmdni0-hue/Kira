@@ -20,9 +20,14 @@ from data.firestore_client import get_business_state, get_daily_sales_timeseries
 # Main public function
 # ──────────────────────────────────────────────────────────────
 
-def forecast_business(user_id: str) -> Optional[Dict[str, Any]]:
+def forecast_business(user_id: str, language: Optional[str] = None) -> Optional[Dict[str, Any]]:
     """
     Compute forward projections for user_id from internal data only.
+
+    `language`, if given as "id" or "en", overrides the business's stored
+    default language for the narrative text (cash_forecast, summary,
+    stockout deadlines). Falls back to the business's stored language when
+    not provided.
 
     Returns None if user_id is not found.
 
@@ -41,7 +46,7 @@ def forecast_business(user_id: str) -> Optional[Dict[str, Any]]:
         return None
 
     history  = get_daily_sales_timeseries(user_id)   # [{date, revenue, transactions}]
-    language = state.get("language", "id")
+    language = language if language in ("id", "en") else state.get("language", "id")
     is_id    = language == "id"
     products = state.get("_products_raw", [])
 

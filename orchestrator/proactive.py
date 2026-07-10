@@ -79,13 +79,12 @@ def _margin_severity(margin_pct: float) -> Tuple[int, str]:
     return 0, "low"
 
 
-def _detect_situations(state: Dict[str, Any]) -> List[Detection]:
+def _detect_situations(state: Dict[str, Any], language: str) -> List[Detection]:
     """
     Scans a business state snapshot and returns all detected situations,
     including low-severity ones. Threshold filtering happens in the caller.
     """
     detections: List[Detection] = []
-    language     = state.get("language", "id")
     business     = state["business_name"]
     owner        = state["owner"]
     avg_daily    = state.get("avg_daily_sales", 1)
@@ -560,9 +559,14 @@ def _enrich_with_reasoning(
 # Public API
 # ──────────────────────────────────────────────────────────────
 
-def run_proactive_check(user_id: str) -> List[Dict[str, Any]]:
+def run_proactive_check(user_id: str, language: Optional[str] = None) -> List[Dict[str, Any]]:
     """
     Scheduled proactive check — NOT triggered by user input.
+
+    `language`, if given as "id" or "en", overrides the business's stored
+    default language for the enrichment narrative (why_it_matters /
+    business_impact / next_step). Falls back to the business's stored
+    language when not provided.
 
     Steps:
       1. Detect all situations from the business state snapshot
@@ -579,10 +583,10 @@ def run_proactive_check(user_id: str) -> List[Dict[str, Any]]:
     if not state:
         return []
 
-    language = state.get("language", "id")
+    language = language if language in ("id", "en") else state.get("language", "id")
 
     # 1. Detect
-    all_detections = _detect_situations(state)
+    all_detections = _detect_situations(state, language)
 
     # 2. Filter by severity threshold
     qualifying = [d for d in all_detections if d.severity_score >= REASONING_THRESHOLD]

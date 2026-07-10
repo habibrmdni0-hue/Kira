@@ -110,9 +110,9 @@ def chat(body: ChatRequest) -> Dict[str, Any]:
 # ── GET /proactive/{user_id} ─────────────────────────────────────
 
 @app.get("/proactive/{user_id}")
-def proactive(user_id: str) -> Dict[str, Any]:
+def proactive(user_id: str, lang: str = "id") -> Dict[str, Any]:
     try:
-        alerts = run_proactive_check(user_id)
+        alerts = run_proactive_check(user_id, language=lang)
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc))
 
@@ -237,8 +237,8 @@ def business(user_id: str) -> Dict[str, Any]:
 # ── GET /forecast/{user_id} ─────────────────────────────────────
 
 @app.get("/forecast/{user_id}")
-def forecast(user_id: str) -> Dict[str, Any]:
-    result = forecast_business(user_id)
+def forecast(user_id: str, lang: str = "id") -> Dict[str, Any]:
+    result = forecast_business(user_id, language=lang)
     if not result:
         raise HTTPException(status_code=404, detail=f"No data for {user_id!r}")
     return result

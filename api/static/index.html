@@ -1425,9 +1425,14 @@ function setLang(l) {
   const lpId = document.getElementById('lpBtnId'); if (lpId) lpId.classList.toggle('active', l === 'id');
   const lpEn = document.getElementById('lpBtnEn'); if (lpEn) lpEn.classList.toggle('active', l === 'en');
   _applyStaticLabels();
-  // Re-render cached data with new labels (no network calls needed)
+  // Re-render cached business data with new labels (no network call needed —
+  // it has no server-generated narrative text, just numbers).
   if (_bizData) applyBizUI(_bizData);
-  if (_fcData)  { renderRunwayUI(_fcData); renderForecastPanel(_fcData); renderOvForecast(_fcData); }
+  // Forecast + alerts contain backend-generated narrative text (summary,
+  // insight explanations) that's only available in the language it was
+  // fetched with — re-fetch from the server instead of re-rendering stale text.
+  fetchForecast();
+  loadAlerts();
 }
 
 function _applyStaticLabels() {
@@ -1747,7 +1752,7 @@ function _renderSalesChartAn(history) {
 ═══════════════════════════════════════════════ */
 async function fetchForecast() {
   try {
-    const d = await (await fetch(`/forecast/${uid}`)).json();
+    const d = await (await fetch(`/forecast/${uid}?lang=${lang}`)).json();
     _fcData = d;
     renderRunwayUI(d);
     renderForecastPanel(d);
@@ -1945,7 +1950,7 @@ function renderMarginChart(products) {
 async function loadAlerts() {
   const body = document.getElementById('alertsBody');
   try {
-    const d = await (await fetch(`/proactive/${uid}`)).json();
+    const d = await (await fetch(`/proactive/${uid}?lang=${lang}`)).json();
     const alerts = d.alerts || [];
     _alertsData = alerts;
     body.innerHTML = alerts.length
