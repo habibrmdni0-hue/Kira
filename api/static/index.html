@@ -399,6 +399,27 @@
     .chat-card {
       flex: 1; display: flex; flex-direction: column; overflow: hidden;
     }
+    .agent-panel {
+      display: flex; flex-wrap: wrap; gap: 6px;
+      padding: 10px 16px; border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .agent-chip {
+      display: flex; align-items: center; gap: 5px;
+      padding: 4px 10px; border-radius: 999px;
+      font-size: 11px; font-weight: 600; color: var(--t3);
+      background: var(--bg); border: 1px solid var(--border);
+      transition: background-color .2s ease, border-color .2s ease, color .2s ease;
+    }
+    .agent-chip-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--t3); flex-shrink: 0;
+      transition: background-color .2s ease;
+    }
+    .agent-chip.active {
+      background: var(--accent); border-color: var(--accent); color: #fff;
+    }
+    .agent-chip.active .agent-chip-dot { background: #fff; }
     .chat-body {
       flex: 1; overflow-y: auto;
       padding: 16px; display: flex; flex-direction: column; gap: 10px;
@@ -1083,6 +1104,15 @@
     <!-- ══ VIEW 4 — Chat ════════════════════════════════ -->
     <div id="view-chat" class="view">
       <div class="card chat-card">
+        <div class="agent-panel" id="agentPanel">
+          <div class="agent-chip" data-agent="eyes_agent"><span class="agent-chip-dot"></span>Mata</div>
+          <div class="agent-chip" data-agent="bookkeeper_agent"><span class="agent-chip-dot"></span>Juru Hitung</div>
+          <div class="agent-chip" data-agent="inventory_agent"><span class="agent-chip-dot"></span>Penjaga Stok</div>
+          <div class="agent-chip" data-agent="strategy_agent"><span class="agent-chip-dot"></span>Strategi</div>
+          <div class="agent-chip" data-agent="data_entry_agent"><span class="agent-chip-dot"></span>Catat Data</div>
+          <div class="agent-chip" data-agent="reasoning_agent"><span class="agent-chip-dot"></span>Reasoning</div>
+          <div class="agent-chip" data-agent="voice_agent"><span class="agent-chip-dot"></span>Suara</div>
+        </div>
         <div class="chat-body" id="chatBody">
           <div class="empty-state" id="chatEmpty">
             <div style="font-size:36px;margin-bottom:12px">💬</div>
@@ -2028,13 +2058,33 @@ async function sendChat() {
       body: JSON.stringify({ user_id: uid, message: msg, language: lang }),
     });
     _removeEl(tid);
-    _addMsg('kira', r.ok ? (await r.json()).response : t('errMsg'));
+    if (r.ok) {
+      const data = await r.json();
+      _addMsg('kira', data.response);
+      _flashAgents(data.agents_invoked || []);
+    } else {
+      _addMsg('kira', t('errMsg'));
+    }
   } catch (_) {
     _removeEl(tid);
     _addMsg('kira', t('errMsg'));
   } finally {
     btn.disabled = false;
   }
+}
+
+/* Agent activity panel — briefly highlight whichever agents the
+   orchestrator invoked for the last chat turn, all at once. */
+function _flashAgents(agentNames) {
+  const panel = document.getElementById('agentPanel');
+  if (!panel) return;
+  agentNames.forEach(name => {
+    const chip = panel.querySelector(`[data-agent="${name}"]`);
+    if (!chip) return;
+    chip.classList.add('active');
+    clearTimeout(chip._flashTimer);
+    chip._flashTimer = setTimeout(() => chip.classList.remove('active'), 2500);
+  });
 }
 
 function onInputKey(e) {
