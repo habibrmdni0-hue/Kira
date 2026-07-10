@@ -97,7 +97,23 @@ def _node_intake(state: KiraState) -> KiraState:
 
 
 def _node_route(state: KiraState) -> KiraState:
-    """Classify intent and decide which agents to invoke."""
+    """Classify intent and decide which agents to invoke.
+
+    Sticky routing for data_entry_agent: its slot-filling session state
+    lives inside the agent, invisible to the LLM router, which classifies
+    each message in isolation. A bare follow-up like "iya" carries no
+    signal on its own and would otherwise get routed as small talk,
+    silently abandoning the pending update_stock conversation. So if this
+    user has a pending data-entry session, skip classification entirely
+    and route straight back to it.
+    """
+    data_entry_agent = _AGENT_REGISTRY["data_entry_agent"]
+    if data_entry_agent.has_pending(state["user_id"]):
+        return {
+            **state,
+            "intent": "continuing data entry (pending session)",
+            "agents_to_invoke": ["data_entry_agent"],
+        }
     try:
         intent, agents = llm_route(state["payload"], state["language"])
     except Exception as exc:

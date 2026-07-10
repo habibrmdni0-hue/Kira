@@ -201,7 +201,11 @@
     /* View panels — show/hide */
     .view { display: none; }
     .view.active { display: block; }
-    #view-chat.active { display: flex; flex-direction: column; height: calc(100vh - 64px); }
+    /* .view-header's real rendered height (80px) + .view-content's top
+       padding (18px, still present — only padding-bottom is zeroed by
+       .no-scroll above) must both be subtracted, or the chat card
+       overflows past the viewport bottom and clips the input row. */
+    #view-chat.active { display: flex; flex-direction: column; height: calc(100vh - 80px - 18px); }
 
     /* ─────────────────── CARDS ────────────────────────── */
     .card {
@@ -425,7 +429,7 @@
       30%          { transform: translateY(-6px); }
     }
     .chat-input-row {
-      padding: 10px 14px; border-top: 1px solid var(--border);
+      padding: 10px 16px; border-top: 1px solid var(--border);
       display: flex; gap: 8px; align-items: flex-end; flex-shrink: 0;
       background: var(--card);
     }

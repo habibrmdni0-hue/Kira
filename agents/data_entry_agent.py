@@ -2,30 +2,47 @@
 DataEntryAgent — lets the shop owner record/update business data through
 natural-language chat instead of the manual "Catat Data" form.
 
-Current scope (slice 1): stock updates only. Sales and expense recording
-are separate future slices — deliberately not built yet.
+Current scope (slice 1 + 2): stock updates and sales entry. Expense
+recording is a separate future slice — deliberately not built yet (no
+Firestore schema/function exists for it — see project notes).
 
 Multi-turn flow:
   Kira uses LLM tool-calling (confirmed working on Fireworks' gpt-oss-120b —
   see scratchpad spike_tool_calling.py). If the owner's message doesn't
-  contain enough information to call update_stock, the LLM responds with a
+  contain enough information to call a tool, the LLM responds with a
   clarifying question in plain text instead — that becomes the reply, and
   the conversation so far is held in memory so the next message continues
   the same slot-filling turn instead of starting over.
 
-Session state is in-process memory only (self._sessions), keyed by user_id.
-Fine for a single Railway instance / demo; resets on restart or redeploy.
+Sticky routing: the orchestrator checks has_pending(user_id) BEFORE running
+intent classification, so short follow-ups ("iya", "jadi 5kg") stay routed
+here instead of being misclassified as small talk on their own. See
+orchestrator.py's _node_route.
 
-No confirmation step before writing — stock updates are reversible/low-risk.
-Money-moving writes (sales/expenses), when built, should confirm first.
+Session state is in-process memory only (self._sessions / self._pending_confirm),
+keyed by user_id. Fine for a single Railway instance / demo; resets on
+restart or redeploy.
+
+Confirmation policy (deliberate, not symmetric):
+  update_stock  — writes immediately, no confirmation. Reversible/low-risk.
+  record_sale   — money-moving. Requires an explicit yes from the owner
+                   before anything is written. The confirmation question
+                   text and the yes/no classification are both plain Python
+                   (not LLM-generated) so this step can't be talked around
+                   by a confused or hallucinating model.
 """
 from __future__ import annotations
 
 import json
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from config.settings import settings
-from data.firestore_client import get_inventory, update_inventory_stock
+from data.firestore_client import (
+    get_inventory,
+    get_sales_history,
+    update_inventory_stock,
+    record_transaction,
+)
 from .base import BaseAgent, AgentRequest, AgentResponse
 
 
@@ -55,29 +72,61 @@ _TOOLS = [
                 "required": ["item_name", "new_stock_quantity"],
             },
         },
-    }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "record_sale",
+            "description": (
+                "Record a sale/transaction for one product — the owner is telling "
+                "you they just sold something. Only call this once you know the "
+                "exact product name, the quantity sold, AND the unit price."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "product_name": {
+                        "type": "string",
+                        "description": "Name of the product sold, as the owner referred to it.",
+                    },
+                    "quantity": {
+                        "type": "number",
+                        "description": "How many units were sold.",
+                    },
+                    "unit_price": {
+                        "type": "number",
+                        "description": "Price per unit in Rupiah (a plain number, e.g. 15000).",
+                    },
+                },
+                "required": ["product_name", "quantity", "unit_price"],
+            },
+        },
+    },
 ]
 
 _SYSTEM_TEMPLATE = """\
-You are Kira, helping a warung (small shop) owner update their stock records \
+You are Kira, helping a warung (small shop) owner record business data \
 through chat instead of filling out a form.
 
-Your ONLY job right now: figure out which inventory item the owner wants to \
-update and the new stock quantity, then call update_stock.
+You have two tools:
+- update_stock: the owner is telling you a new stock quantity for an item.
+- record_sale: the owner is telling you they sold something (a transaction).
 
 RULES:
-1. If the owner's message is missing the item name OR the new quantity, do \
-NOT call the function — ask a short, natural follow-up question for exactly \
-the missing piece(s). Do not ask about anything else.
-2. Never guess a quantity or item name that wasn't stated or clearly implied.
-3. The owner's actual inventory items are: {item_list}. If they mention an \
-item that doesn't clearly match one of these, do NOT call the function — \
-tell them that item isn't in their records and they should add it via the \
-"Catat Data" page first.
-4. Once you have both a valid item name (matching the list above) and a \
-clear numeric quantity, call update_stock immediately — don't ask for \
-confirmation, just call it.
-5. Keep any text reply short — one or two sentences.
+1. If a message is missing information needed for either tool, do NOT call \
+it — ask a short, natural follow-up question for exactly the missing \
+piece(s). Do not ask about anything else.
+2. Never guess a name, quantity, or price that wasn't stated or clearly implied.
+3. The owner's actual inventory items are: {item_list}.
+   The owner's actual products (for sales) are: {product_list}.
+   If they mention an item/product that doesn't clearly match one of these \
+lists, do NOT call any function — tell them it isn't in their records and \
+they should add it via the "Catat Data" page first.
+4. Indonesian shorthand numbers: "rb"/"ribu" = x1,000, "jt"/"juta" = x1,000,000 \
+(e.g. "30rb" = 30000, "1,5jt" = 1500000).
+5. Once you have everything a tool needs (matching the lists above), call \
+it immediately — don't ask for confirmation yourself, just call it.
+6. Keep any text reply short — one or two sentences.
 
 LANGUAGE: {language_instruction}
 """
@@ -87,6 +136,32 @@ _LANGUAGE_INSTRUCTIONS = {
     "en": "Respond in warm, conversational English.",
 }
 
+_YES_WORDS = {
+    "ya", "iya", "yaa", "iyaa", "yoi", "yap", "yup", "yep", "ok", "oke", "okay",
+    "benar", "betul", "bener", "sip", "siap", "lanjut", "gas", "cocok",
+    "yes", "yeah", "yea", "correct", "right", "confirm", "confirmed",
+}
+_NO_WORDS = {
+    "tidak", "gak", "ga", "nggak", "enggak", "bukan", "salah", "batal",
+    "no", "nope", "wrong", "cancel", "not",
+}
+
+
+def _classify_yes_no(text: str) -> Optional[bool]:
+    """Deterministic yes/no classification for a confirmation reply.
+
+    Plain keyword match on purpose — this gate protects a money-moving
+    write, so it should not depend on another LLM call succeeding.
+    Returns True/False, or None if the reply is genuinely ambiguous.
+    """
+    normalized = text.strip().lower().strip("!.,")
+    words = set(normalized.split())
+    if normalized in _YES_WORDS or words & _YES_WORDS:
+        return True
+    if normalized in _NO_WORDS or words & _NO_WORDS:
+        return False
+    return None
+
 
 class DataEntryAgent(BaseAgent):
     name = "data_entry_agent"
@@ -94,6 +169,11 @@ class DataEntryAgent(BaseAgent):
     def __init__(self):
         self._client = None
         self._sessions: Dict[str, List[Dict[str, str]]] = {}
+        self._pending_confirm: Dict[str, Dict[str, Any]] = {}
+
+    def has_pending(self, user_id: str) -> bool:
+        """True if user_id is mid slot-filling OR awaiting yes/no confirmation."""
+        return bool(self._sessions.get(user_id)) or user_id in self._pending_confirm
 
     def _get_client(self):
         if self._client is None:
@@ -108,18 +188,25 @@ class DataEntryAgent(BaseAgent):
         user_id  = request.user_id
         language = request.language
 
+        if user_id in self._pending_confirm:
+            return self._handle_confirmation(request)
+
         items = get_inventory(user_id)
         item_names = [i["item"] for i in items]
-        if not item_names:
+        products = get_sales_history(user_id)
+        product_names = [p["item"] for p in products]
+
+        if not item_names and not product_names:
             text = self._lang(
-                "Saya tidak menemukan data stok untuk bisnis ini.",
-                "I couldn't find any stock data for this business.",
+                "Saya tidak menemukan data bisnis untuk akun ini.",
+                "I couldn't find any business data for this account.",
                 language,
             )
             return AgentResponse(agent_name=self.name, result={"response_text": text})
 
         system = _SYSTEM_TEMPLATE.format(
-            item_list=", ".join(item_names),
+            item_list=", ".join(item_names) or "(none on record)",
+            product_list=", ".join(product_names) or "(none on record)",
             language_instruction=_LANGUAGE_INSTRUCTIONS.get(
                 language, _LANGUAGE_INSTRUCTIONS["en"]
             ),
@@ -156,8 +243,8 @@ class DataEntryAgent(BaseAgent):
 
         if not choice.tool_calls:
             reply = (choice.content or "").strip() or self._lang(
-                "Bisa tolong sebutkan item dan jumlah stok barunya?",
-                "Could you tell me the item and the new stock quantity?",
+                "Bisa tolong dijelaskan lebih detail?",
+                "Could you give me a bit more detail?",
                 language,
             )
             history.append({"role": "user", "content": request.payload})
@@ -177,6 +264,16 @@ class DataEntryAgent(BaseAgent):
             )
             return AgentResponse(agent_name=self.name, result={"response_text": text})
 
+        if call.function.name == "record_sale":
+            return self._handle_record_sale(user_id, language, args, product_names)
+
+        return self._handle_update_stock(user_id, language, args, item_names)
+
+    # ── update_stock: validate, write immediately, no confirmation ─────
+
+    def _handle_update_stock(
+        self, user_id: str, language: str, args: Dict[str, Any], item_names: List[str],
+    ) -> AgentResponse:
         item_name = str(args.get("item_name", "")).strip()
         matched = next((n for n in item_names if n.lower() == item_name.lower()), None)
         try:
@@ -205,10 +302,99 @@ class DataEntryAgent(BaseAgent):
                 success=False, error=str(exc),
             )
 
-        self._sessions.pop(user_id, None)  # done — clear slot state
+        self._sessions.pop(user_id, None)
         text = self._lang(
             f"Oke, stok {result['updated_item']} sudah saya update jadi {result['new_stock']:g}.",
             f"Done — {result['updated_item']} stock updated to {result['new_stock']:g}.",
+            language,
+        )
+        return AgentResponse(agent_name=self.name, result={"response_text": text})
+
+    # ── record_sale: validate, then ask for confirmation before writing ─
+
+    def _handle_record_sale(
+        self, user_id: str, language: str, args: Dict[str, Any], product_names: List[str],
+    ) -> AgentResponse:
+        product_name = str(args.get("product_name", "")).strip()
+        matched = next((n for n in product_names if n.lower() == product_name.lower()), None)
+        try:
+            quantity = float(args.get("quantity"))
+        except (TypeError, ValueError):
+            quantity = None
+        try:
+            unit_price = float(args.get("unit_price"))
+        except (TypeError, ValueError):
+            unit_price = None
+
+        if matched is None or not quantity or quantity <= 0 or not unit_price or unit_price <= 0:
+            self._sessions.pop(user_id, None)
+            text = self._lang(
+                f"Maaf, saya tidak yakin soal produk '{product_name}' atau angkanya. "
+                f"Produk yang tercatat: {', '.join(product_names)}. Coba lagi?",
+                f"Sorry, I'm not confident about product '{product_name}' or the numbers. "
+                f"Recorded products: {', '.join(product_names)}. Could you try again?",
+                language,
+            )
+            return AgentResponse(agent_name=self.name, result={"response_text": text})
+
+        revenue = quantity * unit_price
+        self._sessions.pop(user_id, None)
+        self._pending_confirm[user_id] = {
+            "product_name": matched,
+            "quantity":     quantity,
+            "unit_price":   unit_price,
+            "revenue":      revenue,
+            "language":     language,
+        }
+        text = self._lang(
+            f"Oke, saya catat penjualan {matched} {quantity:g} pcs @ Rp{unit_price:,.0f} "
+            f"= Rp{revenue:,.0f}. Benar?",
+            f"Got it — recording a sale of {matched} x{quantity:g} @ Rp{unit_price:,.0f} "
+            f"= Rp{revenue:,.0f}. Is that right?",
+            language,
+        )
+        return AgentResponse(agent_name=self.name, result={"response_text": text})
+
+    def _handle_confirmation(self, request: AgentRequest) -> AgentResponse:
+        user_id = request.user_id
+        pending = self._pending_confirm[user_id]
+        language = pending["language"]
+        verdict = _classify_yes_no(request.payload)
+
+        if verdict is None:
+            text = self._lang(
+                "Maaf, saya kurang paham — ya atau tidak untuk catat penjualan ini?",
+                "Sorry, I didn't quite catch that — yes or no to record this sale?",
+                language,
+            )
+            return AgentResponse(agent_name=self.name, result={"response_text": text})
+
+        del self._pending_confirm[user_id]
+
+        if not verdict:
+            text = self._lang(
+                "Oke, tidak jadi saya catat. Kalau mau coba lagi, sebutkan detailnya.",
+                "Okay, I won't record that. Let me know the details if you'd like to try again.",
+                language,
+            )
+            return AgentResponse(agent_name=self.name, result={"response_text": text})
+
+        try:
+            result = record_transaction(
+                user_id, pending["product_name"], pending["quantity"], pending["unit_price"],
+            )
+        except ValueError as exc:
+            return AgentResponse(
+                agent_name=self.name,
+                result={"response_text": str(exc)},
+                success=False, error=str(exc),
+            )
+
+        text = self._lang(
+            f"Sip, penjualan {pending['product_name']} sudah saya catat "
+            f"(Rp{pending['revenue']:,.0f}). Saldo kas sekarang Rp{result['new_cash_balance']:,.0f}.",
+            f"Done — sale of {pending['product_name']} recorded "
+            f"(Rp{pending['revenue']:,.0f}). Cash balance is now Rp{result['new_cash_balance']:,.0f}.",
             language,
         )
         return AgentResponse(agent_name=self.name, result={"response_text": text})

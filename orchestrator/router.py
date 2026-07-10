@@ -25,7 +25,8 @@ AGENT_DESCRIPTIONS = {
     "reasoning_agent":  "Complex multi-step analysis, forecasting, cross-domain reasoning",
     "data_entry_agent": (
         "Recording or updating business data the owner is reporting as new "
-        "fact — e.g. 'update stok gula jadi 5kg', 'stok minyak sekarang 2 liter'. "
+        "fact — e.g. 'update stok gula jadi 5kg', 'stok minyak sekarang 2 liter', "
+        "'catat penjualan gula 2kg', 'tadi laku telur 1kg harga 30rb'. "
         "Use ONLY when the owner is telling Kira new information to SAVE, "
         "never when they're just asking to view/check existing data."
     ),
@@ -108,6 +109,10 @@ _KEYWORD_MAP = [
     (["update stok", "ubah stok", "ganti stok", "catat stok", "stok jadi",
       "stok sekarang", "set stok", "stok baru", "update stock", "set stock"],
      "record stock update", ["data_entry_agent"]),
+
+    (["catat penjualan", "catat jual", "tadi laku", "barusan laku", "laku terjual",
+      "record sale", "log sale"],
+     "record a sale", ["data_entry_agent"]),
 
     # Strategy/pricing — check BEFORE generic P&L so "produk rugi" + "saran" routes correctly
     (["strategi", "saran", "produk laris", "produk rugi", "harga jual", "promosi",
