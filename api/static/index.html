@@ -205,7 +205,7 @@
        padding (18px, still present — only padding-bottom is zeroed by
        .no-scroll above) must both be subtracted, or the chat card
        overflows past the viewport bottom and clips the input row. */
-    #view-chat.active { display: flex; flex-direction: column; height: calc(100vh - 80px - 18px); }
+    #view-chat.active { display: flex; flex-direction: row; gap: 14px; height: calc(100vh - 80px - 18px); }
 
     /* ─────────────────── CARDS ────────────────────────── */
     .card {
@@ -399,10 +399,22 @@
     .chat-card {
       flex: 1; display: flex; flex-direction: column; overflow: hidden;
     }
+    /* Sidebar: fixed-width column to the right of chat-card. Sized to
+       comfortably fit one 44px-wide character + label without forcing
+       the chat area to feel cramped — verified at 1440 and 1366 widths. */
+    .agent-sidebar {
+      width: 92px; flex-shrink: 0;
+      position: relative; overflow: hidden;
+      padding: 10px 6px;
+    }
+    .track-overlay {
+      position: absolute; inset: 0; width: 100%; height: 100%;
+      pointer-events: none; z-index: 0;
+    }
     .agent-panel {
-      display: flex; flex-wrap: wrap; gap: 4px;
-      padding: 8px 16px; border-bottom: 1px solid var(--border);
-      flex-shrink: 0; justify-content: space-between;
+      position: relative; z-index: 1;
+      display: flex; flex-direction: column; align-items: center;
+      height: 100%; justify-content: space-between;
     }
     .iso-tile {
       display: flex; flex-direction: column; align-items: center;
@@ -431,10 +443,13 @@
     .iso-visor-glow { transition: opacity .3s ease; opacity: .55; }
     .iso-tile.active .iso-visor-glow { opacity: 1; }
 
-    /* Walk-to-user-and-report — plays once per activation. --walk-dx is
-       set from JS per instance (distance to the user mascot varies by
-       which agent tile is active). Two small bounces at the destination
-       read as a "reporting" nod.
+    /* Walk-to-user-and-report — plays once per activation, along the
+       straight track from this agent's fixed spot to the user mascot's.
+       --walk-dx/--walk-dy are set from JS per instance (both axes now
+       that agents sit in a vertical column at different heights, not a
+       single horizontal row). The -Npx bounce offsets are added ON TOP
+       of --walk-dy at each stop — the "reporting" nod stays a vertical
+       hop regardless of the track's own angle.
 
        Easing is set PER keyframe stop (not one curve for the whole 1.8s):
        brisk ease-out leaving home, a snappy back-and-forth for the two
@@ -446,19 +461,19 @@
     @keyframes isoWalkReport {
       0%   { transform: translate(0, 0) scale(1, 1);
              animation-timing-function: cubic-bezier(.3,.6,.35,1); }
-      16%  { transform: translate(calc(var(--walk-dx, 0) * .55), -10px) scale(1.05, .95);
+      16%  { transform: translate(calc(var(--walk-dx, 0) * .55), calc(var(--walk-dy, 0) * .55 - 10px)) scale(1.05, .95);
              animation-timing-function: cubic-bezier(.3,.6,.35,1); }
-      30%  { transform: translate(var(--walk-dx, 0), -9px) scale(1, 1);
+      30%  { transform: translate(var(--walk-dx, 0), calc(var(--walk-dy, 0) - 9px)) scale(1, 1);
              animation-timing-function: cubic-bezier(.36,.07,.19,.97); }
-      38%  { transform: translate(var(--walk-dx, 0), -15px) scale(1, 1);
+      38%  { transform: translate(var(--walk-dx, 0), calc(var(--walk-dy, 0) - 15px)) scale(1, 1);
              animation-timing-function: cubic-bezier(.36,.07,.19,.97); }
-      46%  { transform: translate(var(--walk-dx, 0), -9px) scale(1, 1);
+      46%  { transform: translate(var(--walk-dx, 0), calc(var(--walk-dy, 0) - 9px)) scale(1, 1);
              animation-timing-function: cubic-bezier(.36,.07,.19,.97); }
-      54%  { transform: translate(var(--walk-dx, 0), -15px) scale(1, 1);
+      54%  { transform: translate(var(--walk-dx, 0), calc(var(--walk-dy, 0) - 15px)) scale(1, 1);
              animation-timing-function: cubic-bezier(.4,0,.2,1); }
-      64%  { transform: translate(var(--walk-dx, 0), -9px) scale(1, 1);
+      64%  { transform: translate(var(--walk-dx, 0), calc(var(--walk-dy, 0) - 9px)) scale(1, 1);
              animation-timing-function: cubic-bezier(.4,0,.2,1); }
-      84%  { transform: translate(calc(var(--walk-dx, 0) * .3), -8px) scale(.96, 1.04);
+      84%  { transform: translate(calc(var(--walk-dx, 0) * .3), calc(var(--walk-dy, 0) * .3 - 8px)) scale(.96, 1.04);
              animation-timing-function: cubic-bezier(.4,0,.2,1); }
       100% { transform: translate(0, 0) scale(1, 1); }
     }
@@ -1146,7 +1161,6 @@
     <!-- ══ VIEW 4 — Chat ════════════════════════════════ -->
     <div id="view-chat" class="view">
       <div class="card chat-card">
-        <div class="agent-panel" id="agentPanel"></div>
         <div class="chat-body" id="chatBody">
           <div class="empty-state" id="chatEmpty">
             <div style="font-size:36px;margin-bottom:12px">💬</div>
@@ -1166,6 +1180,10 @@
           <input type="file" id="fileInput" accept="image/*" style="display:none"
                  onchange="onReceiptFile(this)">
         </div>
+      </div>
+      <div class="card agent-sidebar" id="agentSidebar">
+        <svg class="track-overlay" id="trackOverlay"></svg>
+        <div class="agent-panel" id="agentPanel"></div>
       </div>
     </div>
 
@@ -1450,6 +1468,13 @@ function showView(name) {
 
   // Chat view needs no-scroll on the content wrapper (it manages its own scroll)
   document.getElementById('viewContent').classList.toggle('no-scroll', name === 'chat');
+
+  // The track overlay is computed from live layout positions, which are
+  // all 0 while this view is display:none — recompute now that it's
+  // actually visible (also covers first-ever navigation to Chat Kira,
+  // since _renderAgentPanel() ran once at page load while everything
+  // was still hidden behind the landing page).
+  if (name === 'chat') _updateTracks();
 
   // Update view header
   document.getElementById('viewTitle').textContent = T[lang].vTitle[name];
@@ -2149,7 +2174,7 @@ function _isoCharTile(cfg) {
   const id = cfg.id;
   const v = cfg.visor || { a: '#A5F3FC', b: '#22D3EE', c: '#0E7490', glow: '#67E8F9', rim: '#CFFAFE' };
   return `
-    <div class="iso-tile" data-agent="${id}" title="${cfg.label}">
+    <div class="iso-tile" data-agent="${id}" data-track-color="${c500}" title="${cfg.label}">
       <svg class="iso-svg" viewBox="0 0 120 150">
         <defs>
           <filter id="blur-${id}" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="4"/></filter>
@@ -2182,27 +2207,88 @@ function _renderAgentPanel() {
   const panel = document.getElementById('agentPanel');
   if (!panel) return;
   panel.innerHTML = AGENT_CHARACTERS.map(_isoCharTile).join('') + _isoCharTile(USER_MASCOT);
+  _updateTracks();
 }
 
-/* Walk-to-user-and-report: computed per instance since the horizontal
-   distance to the user mascot differs by which agent tile is active.
-   Agents don't all aim for the same exact spot — each travels ~70% of
-   its own distance to the mascot, so several active at once naturally
-   fan out near (not on top of) each other instead of colliding. */
+/* A tile's raw anchor is the center of its floor tile, in coordinates
+   local to #agentSidebar (the positioning parent for both the track
+   overlay and the walk transforms). Agents sit in a single vertical
+   column directly above the user mascot, so their floor-center X is
+   IDENTICAL for all 7 — without correction every track would draw as
+   one overlapping vertical line. _agentAnchor fans each agent's anchor
+   out horizontally by a small per-index offset (centered on the column)
+   so each track — and the walk that follows it — is visually distinct. */
+function _tileAnchor(tile, sidebarRect) {
+  const floor = tile.querySelector('.iso-floor');
+  const r = floor.getBoundingClientRect();
+  return {
+    x: r.left + r.width / 2 - sidebarRect.left,
+    y: r.top + r.height / 2 - sidebarRect.top,
+  };
+}
+function _agentAnchor(tile, sidebarRect) {
+  const panel = document.getElementById('agentPanel');
+  const agents = [...panel.querySelectorAll('.iso-tile:not([data-agent="user_mascot"])')];
+  const i = agents.indexOf(tile);
+  const fan = (i - (agents.length - 1) / 2) * 8; // px, spreads ~±24px for 7 agents
+  const base = _tileAnchor(tile, sidebarRect);
+  return { x: base.x + fan, y: base.y };
+}
+
+/* Draws the static dotted track from every agent to the user mascot —
+   the "map" the user sees before anything animates. Each track is
+   tinted with that agent's own color at low opacity so it's legible
+   which line belongs to which character. Recomputed on render and on
+   window resize, since it depends on live layout positions. */
+function _updateTracks() {
+  const sidebar = document.getElementById('agentSidebar');
+  const overlay = document.getElementById('trackOverlay');
+  const panel = document.getElementById('agentPanel');
+  if (!sidebar || !overlay || !panel) return;
+
+  const sbRect = sidebar.getBoundingClientRect();
+  overlay.setAttribute('width', sbRect.width);
+  overlay.setAttribute('height', sbRect.height);
+  overlay.setAttribute('viewBox', `0 0 ${sbRect.width} ${sbRect.height}`);
+
+  const userTile = panel.querySelector('[data-agent="user_mascot"]');
+  if (!userTile) return;
+  const u = _tileAnchor(userTile, sbRect);
+
+  let lines = '';
+  panel.querySelectorAll('.iso-tile:not([data-agent="user_mascot"])').forEach(tile => {
+    const a = _agentAnchor(tile, sbRect);
+    const color = tile.dataset.trackColor || '#94A3B8';
+    lines += `<line x1="${a.x.toFixed(1)}" y1="${a.y.toFixed(1)}" x2="${u.x.toFixed(1)}" y2="${u.y.toFixed(1)}" `
+            + `stroke="${color}" stroke-width="1.5" stroke-dasharray="2.5 4" stroke-linecap="round" opacity="0.4"/>`;
+  });
+  overlay.innerHTML = lines;
+}
+
+/* Walk-to-user-and-report: moves along the exact same straight line as
+   this agent's static track (computed fresh each time, not cached from
+   _updateTracks, so it stays correct even if the window was resized
+   between renders). Agents don't all aim for the mascot's exact spot —
+   each travels ~70% of its own distance, so several active at once
+   naturally fan out near (not on top of) each other instead of colliding. */
 function _walkToUser(tile) {
+  const sidebar = document.getElementById('agentSidebar');
   const panel = document.getElementById('agentPanel');
   const userTile = panel && panel.querySelector('[data-agent="user_mascot"]');
-  if (!userTile || tile === userTile) return;
-  const a = tile.getBoundingClientRect();
-  const b = userTile.getBoundingClientRect();
-  const dx = (b.left - a.left) * 0.7;
-  tile.style.setProperty('--walk-dx', `${dx}px`);
+  if (!sidebar || !userTile || tile === userTile) return;
+  const sbRect = sidebar.getBoundingClientRect();
+  const a = _agentAnchor(tile, sbRect);
+  const b = _tileAnchor(userTile, sbRect);
+  tile.style.setProperty('--walk-dx', `${(b.x - a.x) * 0.7}px`);
+  tile.style.setProperty('--walk-dy', `${(b.y - a.y) * 0.7}px`);
   tile.classList.remove('walking');
   void tile.offsetWidth; // restart the animation if it's already mid-walk
   tile.classList.add('walking');
   clearTimeout(tile._walkTimer);
   tile._walkTimer = setTimeout(() => tile.classList.remove('walking'), 1800);
 }
+
+window.addEventListener('resize', () => { if (document.getElementById('agentSidebar')) _updateTracks(); });
 
 /* Agent activity panel — briefly highlight whichever agents the
    orchestrator invoked for the last chat turn, all at once.
