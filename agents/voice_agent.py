@@ -102,6 +102,21 @@ def _build_context_block(context: Dict[str, Any]) -> str:
     elif inv.get("stock"):
         sections.append("INVENTORY: All stock levels are currently healthy.")
 
+    # ── Full per-item stock levels ──────────────────────────────
+    # Alerts above only cover items below reorder point — a healthy item
+    # (e.g. one the owner just restocked) would otherwise be completely
+    # invisible here, so a question about it has no grounding data and
+    # the model ends up answering about whichever item IS in context
+    # (usually the alerted one) instead. Always list every item's actual
+    # current stock so any specific item the owner asks about is covered.
+    stock = inv.get("stock")
+    if stock:
+        stock_lines = "\n".join(
+            f"  - {i['item']}: {i['stock']:g} {i.get('unit', '')}".rstrip()
+            for i in stock
+        )
+        sections.append(f"CURRENT STOCK LEVELS (all items):\n{stock_lines}")
+
     # ── Bookkeeping / financials ───────────────────────────────
     fin_result = context.get("bookkeeper_agent", {})
     fin = fin_result.get("financials") or fin_result  # handle both shapes
@@ -215,8 +230,33 @@ def _mock_synthesize(user_query: str, context: Dict[str, Any], language: str) ->
     recs   = strat.get("recommendations", [])
     analysis = (reas.get("analysis") or "").strip()
 
+    # ── Answer about a specific item if the owner named one ────
+    # Without this, a question about a healthy item (e.g. one just
+    # restocked) falls through to the generic "lead with alerts[0]"
+    # logic below and gets answered as if about whatever OTHER item
+    # happens to be low on stock — wrong answer, wrong product.
+    named_item = None
+    query_lower = user_query.lower()
+    for i in inv.get("stock", []):
+        if i["item"].lower() in query_lower:
+            named_item = i
+            break
+
+    if named_item:
+        unit = named_item.get("unit", "")
+        if is_id:
+            parts.append(
+                f"Stok {named_item['item']} sekarang {named_item['stock']:g} {unit} "
+                f"(sekitar {named_item['days_remaining']} hari lagi)."
+            )
+        else:
+            parts.append(
+                f"{named_item['item']} stock is currently {named_item['stock']:g} {unit} "
+                f"(about {named_item['days_remaining']} days left)."
+            )
+
     # ── Lead with the most urgent thing ────────────────────────
-    if alerts:
+    if alerts and not named_item:
         first = alerts[0]
         item  = first["item"]
         days  = first["days_remaining"]

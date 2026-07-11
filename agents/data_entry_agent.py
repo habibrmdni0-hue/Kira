@@ -154,7 +154,7 @@ ask a short, natural follow-up question for exactly the missing piece(s). \
 Do not ask about anything else.
 2. Never guess a name, quantity, price, or amount that wasn't stated or \
 clearly implied.
-3. The owner's actual inventory items are: {item_list}.
+3. The owner's actual inventory items (with current stock) are: {item_list}.
    The owner's actual products (for sales) are: {product_list}.
    For update_stock/record_sale, if they mention an item/product that \
 doesn't clearly match one of these lists, do NOT call any function — tell \
@@ -175,6 +175,13 @@ an operational expense (not for resale).
 applicable), call it immediately — don't ask for confirmation yourself, \
 just call it.
 7. Keep any text reply short — one or two sentences.
+8. If the owner responds to your question with a question of their own \
+instead of the answer (e.g. you asked for the new total and they ask "sekarang \
+ada berapa?" / "what's the current amount?"), answer their question first \
+using the current stock data in rule 3 (or say you don't have that number if \
+it isn't listed), THEN re-ask exactly what you still need. Never just repeat \
+your previous question verbatim without addressing what they asked — that \
+reads as if you ignored them.
 
 LANGUAGE: {language_instruction}
 """
@@ -241,6 +248,10 @@ class DataEntryAgent(BaseAgent):
 
         items = get_inventory(user_id)
         item_names = [i["item"] for i in items]
+        item_list_str = ", ".join(
+            f"{i['item']} ({i['stock']:g} {i.get('unit', '')})".replace(" )", ")")
+            for i in items
+        )
         products = get_sales_history(user_id)
         product_names = [p["item"] for p in products]
 
@@ -253,7 +264,7 @@ class DataEntryAgent(BaseAgent):
             return AgentResponse(agent_name=self.name, result={"response_text": text})
 
         system = _SYSTEM_TEMPLATE.format(
-            item_list=", ".join(item_names) or "(none on record)",
+            item_list=item_list_str or "(none on record)",
             product_list=", ".join(product_names) or "(none on record)",
             language_instruction=_LANGUAGE_INSTRUCTIONS.get(
                 language, _LANGUAGE_INSTRUCTIONS["en"]
