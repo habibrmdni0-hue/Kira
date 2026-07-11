@@ -1105,13 +1105,13 @@
     <div id="view-chat" class="view">
       <div class="card chat-card">
         <div class="agent-panel" id="agentPanel">
-          <div class="agent-chip" data-agent="eyes_agent"><span class="agent-chip-dot"></span>Mata</div>
-          <div class="agent-chip" data-agent="bookkeeper_agent"><span class="agent-chip-dot"></span>Juru Hitung</div>
-          <div class="agent-chip" data-agent="inventory_agent"><span class="agent-chip-dot"></span>Penjaga Stok</div>
-          <div class="agent-chip" data-agent="strategy_agent"><span class="agent-chip-dot"></span>Strategi</div>
-          <div class="agent-chip" data-agent="data_entry_agent"><span class="agent-chip-dot"></span>Catat Data</div>
-          <div class="agent-chip" data-agent="reasoning_agent"><span class="agent-chip-dot"></span>Reasoning</div>
-          <div class="agent-chip" data-agent="voice_agent"><span class="agent-chip-dot"></span>Suara</div>
+          <div class="agent-chip" data-agent="eyes_agent"><span class="agent-chip-dot"></span><span id="agEyes">Mata</span></div>
+          <div class="agent-chip" data-agent="bookkeeper_agent"><span class="agent-chip-dot"></span><span id="agBookkeeper">Juru Hitung</span></div>
+          <div class="agent-chip" data-agent="inventory_agent"><span class="agent-chip-dot"></span><span id="agInventory">Penjaga Stok</span></div>
+          <div class="agent-chip" data-agent="strategy_agent"><span class="agent-chip-dot"></span><span id="agStrategy">Strategi</span></div>
+          <div class="agent-chip" data-agent="data_entry_agent"><span class="agent-chip-dot"></span><span id="agDataEntry">Catat Data</span></div>
+          <div class="agent-chip" data-agent="reasoning_agent"><span class="agent-chip-dot"></span><span id="agReasoning">Reasoning</span></div>
+          <div class="agent-chip" data-agent="voice_agent"><span class="agent-chip-dot"></span><span id="agVoice">Suara</span></div>
         </div>
         <div class="chat-body" id="chatBody">
           <div class="empty-state" id="chatEmpty">
@@ -1265,6 +1265,8 @@ const T = {
     insightLabel:'Insight Hari Ini',
     noAlerts:'Tidak ada peringatan aktif. Semua aman ✅',
     you:'Anda', kira:'Kira',
+    agEyes:'Mata', agBookkeeper:'Juru Hitung', agInventory:'Penjaga Stok',
+    agStrategy:'Strategi', agDataEntry:'Catat Data', agReasoning:'Reasoning', agVoice:'Suara',
     chatEmptyTitle:'Halo! Saya Kira.',
     chatHint:'Tanya soal stok, keuangan, atau strategi bisnis Anda.',
     sendLabel:'Kirim', refreshLabel:'Refresh', placeholder:'Ketik pesan…',
@@ -1332,6 +1334,8 @@ const T = {
     insightLabel:'Insight of the Day',
     noAlerts:'No active alerts. All clear ✅',
     you:'You', kira:'Kira',
+    agEyes:'Eyes', agBookkeeper:'Bookkeeper', agInventory:'Stock Guardian',
+    agStrategy:'Strategy', agDataEntry:'Data Entry', agReasoning:'Reasoning', agVoice:'Voice',
     chatEmptyTitle:"Hello! I'm Kira.",
     chatHint:'Ask about stock, finances, or business strategy.',
     sendLabel:'Send', refreshLabel:'Refresh', placeholder:'Type a message…',
@@ -1356,15 +1360,15 @@ const T = {
     lpPill:'AI Co-Pilot for Indonesian SMEs',
     lpTrust1:'3 Live Demo Businesses', lpTrust2:'6 AI Agents', lpTrust3:'Firestore Real-time',
     lpFlowLabel:'THE 6-AGENT PIPELINE',
-    lpF1Tag:'Receipt OCR', lpF1Title:'Mata',
-    lpF1Desc:'Just snap a photo of a receipt — Mata reads it and logs the transaction automatically.',
-    lpF2Tag:'Bookkeeping', lpF2Title:'Juru Hitung',
+    lpF1Tag:'Receipt OCR', lpF1Title:'Eyes',
+    lpF1Desc:'Just snap a photo of a receipt — Eyes reads it and logs the transaction automatically.',
+    lpF2Tag:'Bookkeeping', lpF2Title:'Bookkeeper',
     lpF2Desc:'Builds financial reports and calculates margins from every transaction in real-time.',
-    lpF3Tag:'Stock Forecasting', lpF3Title:'Penjaga Stok',
+    lpF3Tag:'Stock Forecasting', lpF3Title:'Stock Guardian',
     lpF3Desc:"Predicts when stock will run out and warns you before you're out of an item.",
-    lpF4Tag:'Pricing Strategy', lpF4Title:'Strategi',
+    lpF4Tag:'Pricing Strategy', lpF4Title:'Strategy',
     lpF4Desc:'Analyzes margins and trends to recommend more profitable pricing.',
-    lpF5Tag:'Natural Conversation', lpF5Title:'Suara',
+    lpF5Tag:'Natural Conversation', lpF5Title:'Voice',
     lpF5Desc:'Talk to Kira like a friend — no need to learn menus or accounting jargon.',
     lpF6Tag:'Orchestrator', lpF6Title:'Kira',
     lpF6Desc:'Ties all five agents together into one proactive assistant watching your business 24/7.',
@@ -1480,7 +1484,8 @@ function _applyStaticLabels() {
                 'lpF1Tag','lpF1Title','lpF1Desc','lpF2Tag','lpF2Title','lpF2Desc',
                 'lpF3Tag','lpF3Title','lpF3Desc','lpF4Tag','lpF4Title','lpF4Desc',
                 'lpF5Tag','lpF5Title','lpF5Desc','lpF6Tag','lpF6Title','lpF6Desc',
-                'lpAmdTitle','lpAmdBody','lpFooterText'];
+                'lpAmdTitle','lpAmdBody','lpFooterText',
+                'agEyes','agBookkeeper','agInventory','agStrategy','agDataEntry','agReasoning','agVoice'];
   ids.forEach(k => { const el = document.getElementById(k); if (el) el.textContent = t(k); });
 
   // Chart card titles (same key, different element IDs)
