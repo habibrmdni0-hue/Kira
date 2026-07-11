@@ -1196,19 +1196,19 @@
 <!-- ══ AMD Modal ════════════════════════════════════════ -->
 <div class="overlay" id="amdOverlay" onclick="overlayClick(event)">
   <div class="modal">
-    <h3>🖥️ AMD MI300X — Inferensi 70B</h3>
-    <p>Kira menggunakan model bahasa <strong>70 miliar parameter</strong>
+    <h3>🖥️ <span id="amdTitle">AMD MI300X — Inferensi 70B</span></h3>
+    <p id="amdBody1">Kira menggunakan model bahasa <strong>70 miliar parameter</strong>
        (Llama-3.1-70B / Qwen2.5-72B) untuk analisis bisnis mendalam.
        Model ini dijalankan di GPU <strong>AMD MI300X</strong> melalui
        endpoint vLLM yang kompatibel dengan OpenAI API — tanpa perubahan kode apa pun.</p>
-    <p><strong>Reasoning Agent</strong> memanggil model 70B ini setiap ada alert
+    <p id="amdBody2"><strong>Reasoning Agent</strong> memanggil model 70B ini setiap ada alert
        bisnis yang butuh analisis: mengapa situasinya terjadi, dampak finansialnya,
        dan satu langkah konkret untuk pemilik warung.</p>
-    <p>Endpoint dikonfigurasi via <code>REASONING_BASE_URL</code> di environment.
+    <p id="amdBody3">Endpoint dikonfigurasi via <code>REASONING_BASE_URL</code> di environment.
        Ganti URL ke AMD Developer Cloud atau Fireworks AI — tidak ada perubahan
        kode yang diperlukan.</p>
     <button class="btn btn-primary" style="width:100%;margin-top:14px"
-            onclick="closeAmd()">Tutup</button>
+            onclick="closeAmd()" id="amdClose">Tutup</button>
   </div>
 </div>
 
@@ -1306,6 +1306,11 @@ const T = {
     lpAmdTitle:'Kenapa AMD MI300X?',
     lpAmdBody:'Reasoning mendalam butuh model besar — 70 miliar parameter — yang tidak bisa berjalan di HP terjangkau. AMD MI300X menjalankan otak analitik Kira di cloud, jadi pemilik warung cukup pakai HP biasa untuk analisis bisnis kelas enterprise.',
     lpFooterText:'© 2026 Kira AI · Dibuat untuk UMKM Indonesia',
+    amdTitle:'AMD MI300X — Inferensi 70B',
+    amdBody1:'Kira menggunakan model bahasa <strong>70 miliar parameter</strong> (Llama-3.1-70B / Qwen2.5-72B) untuk analisis bisnis mendalam. Model ini dijalankan di GPU <strong>AMD MI300X</strong> melalui endpoint vLLM yang kompatibel dengan OpenAI API — tanpa perubahan kode apa pun.',
+    amdBody2:'<strong>Reasoning Agent</strong> memanggil model 70B ini setiap ada alert bisnis yang butuh analisis: mengapa situasinya terjadi, dampak finansialnya, dan satu langkah konkret untuk pemilik warung.',
+    amdBody3:'Endpoint dikonfigurasi via <code>REASONING_BASE_URL</code> di environment. Ganti URL ke AMD Developer Cloud atau Fireworks AI — tidak ada perubahan kode yang diperlukan.',
+    amdClose:'Tutup',
   },
   en: {
     navOv: 'Overview', navAn: 'Analytics', navFc: 'Forecast',
@@ -1375,6 +1380,11 @@ const T = {
     lpAmdTitle:'Why AMD MI300X?',
     lpAmdBody:"Deep reasoning needs a large model — 70 billion parameters — that can't run on an affordable phone. AMD MI300X runs Kira's analytical brain in the cloud, so shop owners only need an ordinary phone to get enterprise-grade business analysis.",
     lpFooterText:'© 2026 Kira AI · Built for Indonesian SMEs',
+    amdTitle:'AMD MI300X — 70B Inference',
+    amdBody1:'Kira uses a <strong>70-billion-parameter</strong> language model (Llama-3.1-70B / Qwen2.5-72B) for deep business analysis. It runs on <strong>AMD MI300X</strong> GPUs through an OpenAI API-compatible vLLM endpoint — with zero code changes required.',
+    amdBody2:'The <strong>Reasoning Agent</strong> calls this 70B model whenever a business alert needs analysis: why it happened, the financial impact, and one concrete next step for the shop owner.',
+    amdBody3:'The endpoint is configured via <code>REASONING_BASE_URL</code> in the environment. Point it at AMD Developer Cloud or Fireworks AI — no code changes required.',
+    amdClose:'Close',
   },
 };
 function t(k) { return T[lang][k] !== undefined ? T[lang][k] : k; }
@@ -1485,8 +1495,12 @@ function _applyStaticLabels() {
                 'lpF3Tag','lpF3Title','lpF3Desc','lpF4Tag','lpF4Title','lpF4Desc',
                 'lpF5Tag','lpF5Title','lpF5Desc','lpF6Tag','lpF6Title','lpF6Desc',
                 'lpAmdTitle','lpAmdBody','lpFooterText',
-                'agEyes','agBookkeeper','agInventory','agStrategy','agDataEntry','agReasoning','agVoice'];
+                'agEyes','agBookkeeper','agInventory','agStrategy','agDataEntry','agReasoning','agVoice',
+                'amdTitle','amdClose'];
   ids.forEach(k => { const el = document.getElementById(k); if (el) el.textContent = t(k); });
+
+  // AMD modal body paragraphs contain <strong>/<code> markup, so use innerHTML
+  ['amdBody1','amdBody2','amdBody3'].forEach(k => { const el = document.getElementById(k); if (el) el.innerHTML = t(k); });
 
   // Chart card titles (same key, different element IDs)
   const titleMap = {
